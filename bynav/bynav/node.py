@@ -81,12 +81,12 @@ class Node_bynav(Node):
             list = list.split(',')
 
             if list[1] != "":
-                PitchRate = double(list[2])
-                RollRate = double(list[3])
-                YawRate = double(list[4])
-                LateralAcc = double(list[5])
-                LongitudinalAcc = double(list[6])
-                VerticalAcc = double(list[7])
+                PitchRate = float(list[2])
+                RollRate = float(list[3])
+                YawRate = float(list[4])
+                LateralAcc = float(list[5])
+                LongitudinalAcc = float(list[6])
+                VerticalAcc = float(list[7])
 
                 self.imu_msg.angular_velocity.x = PitchRate
                 self.imu_msg.angular_velocity.y = RollRate
@@ -109,9 +109,9 @@ class Node_bynav(Node):
 
             if list[1] != "":
                 """欧拉角转四元数"""
-                Roll = double(list[2])
-                Pitch = double(list[3])
-                Azimuth = double(list[4])
+                Roll = float(list[2])
+                Pitch = float(list[3])
+                Azimuth = float(list[4])
 
                 x, y, z, w = self.Eular2Quat([Roll, Pitch, Azimuth])
 

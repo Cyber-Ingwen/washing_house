@@ -1,0 +1,24 @@
+[0.351s] Invoking command in '/root/cidi_ws/src/bynav': PYTHONPATH=/root/cidi_ws/src/install/bynav/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../build/bynav build --build-base /root/cidi_ws/src/build/bynav/build install --prefix /root/cidi_ws/src/install/bynav --record /root/cidi_ws/src/build/bynav/install.log --single-version-externally-managed
+[0.452s] running egg_info
+[0.452s] writing ../build/bynav/bynav.egg-info/PKG-INFO
+[0.452s] writing dependency_links to ../build/bynav/bynav.egg-info/dependency_links.txt
+[0.452s] writing entry points to ../build/bynav/bynav.egg-info/entry_points.txt
+[0.452s] writing requirements to ../build/bynav/bynav.egg-info/requires.txt
+[0.452s] writing top-level names to ../build/bynav/bynav.egg-info/top_level.txt
+[0.474s] reading manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'
+[0.475s] writing manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'
+[0.475s] running build
+[0.475s] running build_py
+[0.475s] copying bynav/node.py -> /root/cidi_ws/src/build/bynav/build/lib/bynav
+[0.475s] running install
+[0.475s] running install_lib
+[0.476s] copying /root/cidi_ws/src/build/bynav/build/lib/bynav/node.py -> /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav
+[0.476s] byte-compiling /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav/node.py to node.cpython-38.pyc
+[0.477s] running install_data
+[0.477s] running install_egg_info
+[0.478s] removing '/root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav-0.0.0-py3.8.egg-info' (and everything under it)
+[0.478s] Copying ../build/bynav/bynav.egg-info to /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav-0.0.0-py3.8.egg-info
+[0.479s] running install_scripts
+[0.489s] Installing bynav_node script to /root/cidi_ws/src/install/bynav/lib/bynav
+[0.489s] writing list of installed files to '/root/cidi_ws/src/build/bynav/install.log'
+[0.500s] Invoked command in '/root/cidi_ws/src/bynav' returned '0': PYTHONPATH=/root/cidi_ws/src/install/bynav/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../build/bynav build --build-base /root/cidi_ws/src/build/bynav/build install --prefix /root/cidi_ws/src/install/bynav --record /root/cidi_ws/src/build/bynav/install.log --single-version-externally-managed

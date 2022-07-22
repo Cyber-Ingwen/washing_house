@@ -23,11 +23,9 @@ class Node_bynav(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         """打开串口"""
-        """
         port = "/dev/ttyUSB0"
         baudrate = 115200
         self.ser = Serial(port, baudrate)
-        """
 
         self.get_logger().info("串口已打开")
 
@@ -59,19 +57,8 @@ class Node_bynav(Node):
     def timer_callback(self):
         """读取解析数据"""
 
-        """
         line = self.ser.readline()
         line = str(line)
-        """
-        line = "$GPGGA,062134.00,2813.9908005,N,11252.6285300,E,1,28,0.5,83.684,M,-17.038,M,0.000,0000*60"
-        list = line.split(',')
-        """
-        line = "#CORRIMUDATAA,ICOM4,0,0.0,FINESTEERING,2106,444279.000,00000000,0000,68;2106,444279.000000000,-0.000002203,-0.000002203,-0.000000670,0.000005145,0.000102724,-0.000006268*b0429fcb"
-        list = line.split(',')
-
-        line = "#INSATTA,ICOM4,0,0.0,FINESTEERING,2106,444520.000,00000000,0000,68;2106,444520.000000000,179.817646100,-0.384419858,0.601726410,INS_ALIGNMENT_COMPLETE*127e6ba7"
-        list = line.split(',')
-        """
 
         """gps数据"""
         if str(list[0]) == "$GPGGA":
@@ -81,8 +68,6 @@ class Node_bynav(Node):
                 self.gps_msg.altitude = float(list[9])
 
                 self.gps_flag = 1
-                
-                self.get_logger().info(str(self.gps_msg.altitude))
 
             else:
                 self.gps_flag = 0
@@ -96,12 +81,12 @@ class Node_bynav(Node):
             list = list.split(',')
 
             if list[1] != "":
-                PitchRate = double(list[2])
-                RollRate = double(list[3])
-                YawRate = double(list[4])
-                LateralAcc = double(list[5])
-                LongitudinalAcc = double(list[6])
-                VerticalAcc = double(list[7])
+                PitchRate = float(list[2])
+                RollRate = float(list[3])
+                YawRate = float(list[4])
+                LateralAcc = float(list[5])
+                LongitudinalAcc = float(list[6])
+                VerticalAcc = float(list[7])
 
                 self.imu_msg.angular_velocity.x = PitchRate
                 self.imu_msg.angular_velocity.y = RollRate
@@ -124,9 +109,9 @@ class Node_bynav(Node):
 
             if list[1] != "":
                 """欧拉角转四元数"""
-                Roll = double(list[2])
-                Pitch = double(list[3])
-                Azimuth = double(list[4])
+                Roll = float(list[2])
+                Pitch = float(list[3])
+                Azimuth = float(list[4])
 
                 x, y, z, w = self.Eular2Quat([Roll, Pitch, Azimuth])
 
