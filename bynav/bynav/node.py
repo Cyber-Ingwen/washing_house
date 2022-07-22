@@ -27,6 +27,11 @@ class Node_bynav(Node):
         baudrate = 115200
         self.ser = Serial(port, baudrate)
 
+        self.ser.write("UNLOGALL")
+        self.ser.write("LOG GPGGA ONTIME" + str(timer_period))
+        self.ser.write("LOG COM1 CORRIMUDATAA ONNEW")
+        self.ser.write("LOG COM1 INSATTA ONTIME" + str(timer_period))
+
         self.get_logger().info("串口已打开")
 
         self.gps_msg = NavSatFix()
