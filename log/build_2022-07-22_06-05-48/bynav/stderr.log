@@ -1,0 +1,5 @@
+  File "/root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav/node.py", line 79
+    elif str(list[0]) == "#CORRIMUDATAA":
+    ^
+SyntaxError: invalid syntax
+

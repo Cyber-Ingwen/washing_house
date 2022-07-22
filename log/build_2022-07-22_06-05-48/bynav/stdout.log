@@ -1,0 +1,35 @@
+running egg_info
+creating ../build/bynav/bynav.egg-info
+writing ../build/bynav/bynav.egg-info/PKG-INFO
+writing dependency_links to ../build/bynav/bynav.egg-info/dependency_links.txt
+writing entry points to ../build/bynav/bynav.egg-info/entry_points.txt
+writing requirements to ../build/bynav/bynav.egg-info/requires.txt
+writing top-level names to ../build/bynav/bynav.egg-info/top_level.txt
+writing manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'
+reading manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'
+writing manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /root/cidi_ws/src/build/bynav/build
+creating /root/cidi_ws/src/build/bynav/build/lib
+creating /root/cidi_ws/src/build/bynav/build/lib/bynav
+copying bynav/__init__.py -> /root/cidi_ws/src/build/bynav/build/lib/bynav
+copying bynav/node.py -> /root/cidi_ws/src/build/bynav/build/lib/bynav
+running install
+running install_lib
+creating /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav
+copying /root/cidi_ws/src/build/bynav/build/lib/bynav/__init__.py -> /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav
+copying /root/cidi_ws/src/build/bynav/build/lib/bynav/node.py -> /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav
+byte-compiling /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav/__init__.py to __init__.cpython-38.pyc
+byte-compiling /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav/node.py to node.cpython-38.pyc
+running install_data
+creating /root/cidi_ws/src/install/bynav/share/ament_index
+creating /root/cidi_ws/src/install/bynav/share/ament_index/resource_index
+creating /root/cidi_ws/src/install/bynav/share/ament_index/resource_index/packages
+copying resource/bynav -> /root/cidi_ws/src/install/bynav/share/ament_index/resource_index/packages
+copying package.xml -> /root/cidi_ws/src/install/bynav/share/bynav
+running install_egg_info
+Copying ../build/bynav/bynav.egg-info to /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav-0.0.0-py3.8.egg-info
+running install_scripts
+Installing bynav_node script to /root/cidi_ws/src/install/bynav/lib/bynav
+writing list of installed files to '/root/cidi_ws/src/build/bynav/install.log'

@@ -1,0 +1,170 @@
+import time
+import math
+import rclpy
+from rclpy.node import Node
+from serial import Serial
+from sensor_msgs.msg import Imu
+from sensor_msgs.msg import NavSatFix
+
+
+class Node_bynav(Node):
+    """
+    创建bynav节点
+    """
+    def __init__(self,name):
+        super().__init__(name)
+        self.get_logger().info("bynav 节点已创建")
+
+        """创建并初始化发布"""
+        self.gps_pub = self.create_publisher(NavSatFix,"gps", 10) 
+        self.imu_pub = self.create_publisher(Imu,"imu", 10) 
+
+        timer_period = 1
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+
+        """打开串口"""
+        """
+        port = "/dev/ttyUSB0"
+        baudrate = 115200
+        self.ser = Serial(port, baudrate)
+        """
+
+        self.get_logger().info("串口已打开")
+
+        self.gps_msg = NavSatFix()
+        self.imu_msg = Imu()
+        self.gps_flag = 0
+        self.imu_flag = 0
+
+    def Eular2Quat(self, EularAngle_list):
+        """欧拉角转四元数"""
+        [Roll, Pitch, Azimuth] = EularAngle_list
+
+        cy = math.cos(Azimuth * 0.5)
+        sy = math.sin(Azimuth * 0.5)
+        cp = math.cos(Pitch * 0.5)
+        sp = math.sin(Pitch * 0.5)
+        cr = math.cos(Roll * 0.5)
+        sr = math.sin(Roll * 0.5)
+    
+        w = cy * cp * cr + sy * sp * sr
+        x = cy * cp * sr - sy * sp * cr
+        y = sy * cp * sr + cy * sp * cr
+        z = sy * cp * cr - cy * sp * sr
+
+        Quat_list = [x, y, z, w]
+        
+        return Quat_list
+
+    def timer_callback(self):
+        """读取解析数据"""
+
+        """
+        line = self.ser.readline()
+        line = str(line)
+        """
+        line = "$GPGGA,062134.00,2813.9908005,N,11252.6285300,E,1,28,0.5,83.684,M,-17.038,M,0.000,0000*60"
+        list = line.split(',')
+        """
+        line = "#CORRIMUDATAA,ICOM4,0,0.0,FINESTEERING,2106,444279.000,00000000,0000,68;2106,444279.000000000,-0.000002203,-0.000002203,-0.000000670,0.000005145,0.000102724,-0.000006268*b0429fcb"
+        list = line.split(',')
+
+        line = "#INSATTA,ICOM4,0,0.0,FINESTEERING,2106,444520.000,00000000,0000,68;2106,444520.000000000,179.817646100,-0.384419858,0.601726410,INS_ALIGNMENT_COMPLETE*127e6ba7"
+        list = line.split(',')
+        """
+
+        """gps数据"""
+        if str(list[0]) == "$GPGGA":
+            if list[1] != "":
+                self.gps_msg.latitude = float(list[2])/100
+                self.gps_msg.longitude = float(list[4])/100
+                self.gps_msg.altitude = float(list[9])
+
+                self.gps_flag = 1
+
+            else:
+                self.gps_flag = 0
+                self.gps_pub.publish(gps_msg)
+                self.get_logger().info("gps无信号")
+
+        
+        elif str(list[0]) == "#CORRIMUDATAA":
+            """imu校正数据"""
+            header, list = line.split(';')
+            list = list.split(',')
+
+            if list[1] != "":
+                PitchRate = double(list[2])
+                RollRate = double(list[3])
+                YawRate = double(list[4])
+                LateralAcc = double(list[5])
+                LongitudinalAcc = double(list[6])
+                VerticalAcc = double(list[7])
+
+                self.imu_msg.angular_velocity.x = PitchRate
+                self.imu_msg.angular_velocity.y = RollRate
+                self.imu_msg.angular_velocity.z = YawRate
+
+                self.imu_msg.linear_acceleration.x = LateralAcc
+                self.imu_msg.linear_acceleration.y = LongitudinalAcc
+                self.imu_msg.linear_acceleration.z = VerticalAcc
+
+                if(self.imu_flag == -1): self.imu_flag = 1
+                else: self.imu_flag = -1
+
+            else:
+                self.imu_flag = 0
+
+        elif str(list[0]) == "#INSATTA":
+            """imu欧拉角"""
+            header, list = line.split(';')
+            list = list.split(',')
+
+            if list[1] != "":
+                """欧拉角转四元数"""
+                Roll = double(list[2])
+                Pitch = double(list[3])
+                Azimuth = double(list[4])
+
+                x, y, z, w = self.Eular2Quat([Roll, Pitch, Azimuth])
+
+                self.imu_msg.orientation.x = x
+                self.imu_msg.orientation.y = y
+                self.imu_msg.orientation.z = z
+                self.imu_msg.orientation.w = w
+
+                if(self.imu_flag == -1): self.imu_flag = 1
+                else: self.imu_flag = -1
+
+            else:
+                self.imu_flag = 0
+
+
+        """发布数据"""
+        if(self.gps_flag == 1):
+            self.gps_pub.publish(self.gps_msg)
+            self.get_logger().info("发布gps消息")
+        elif(self.gps_flag == 0):
+            self.gps_pub.publish(self.gps_msg)
+            self.get_logger().info("gps无信号")
+
+        if(self.imu_flag == 1):
+            self.imu_pub.publish(self.imu_msg)
+            self.get_logger().info("发布imu消息")
+        elif(self.imu_flag == 0):
+            self.imu_pub.publish(self.imu_msg)
+            self.get_logger().info("imu无信号")
+
+
+def main(args = None):
+    """
+    bynav节点主程序
+    """
+
+    """配置节点"""
+    rclpy.init(args = args)
+    node = Node_bynav("bynav")
+
+    """保持节点"""
+    rclpy.spin(node)
+    rclpy.shutdown()

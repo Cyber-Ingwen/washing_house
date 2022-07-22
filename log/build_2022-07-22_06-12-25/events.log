@@ -1,0 +1,33 @@
+[0.000000] (-) TimerEvent: {}
+[0.000197] (bynav) JobQueued: {'identifier': 'bynav', 'dependencies': OrderedDict()}
+[0.000444] (bynav) JobStarted: {'identifier': 'bynav'}
+[0.099918] (-) TimerEvent: {}
+[0.200297] (-) TimerEvent: {}
+[0.300623] (-) TimerEvent: {}
+[0.319631] (bynav) Command: {'cmd': ['/usr/bin/python3', 'setup.py', 'egg_info', '--egg-base', '../build/bynav', 'build', '--build-base', '/root/cidi_ws/src/build/bynav/build', 'install', '--prefix', '/root/cidi_ws/src/install/bynav', '--record', '/root/cidi_ws/src/build/bynav/install.log', '--single-version-externally-managed'], 'cwd': '/root/cidi_ws/src/bynav', 'env': {'HOSTNAME': 'bd8db0301b10', 'GIT_ASKPASS': '/root/.vscode-server/bin/3b889b090b5ad5793f524b5d1d39fda662b96a2a/extensions/git/dist/askpass.sh', 'SHLVL': '2', 'LD_LIBRARY_PATH': '/opt/ros/foxy/opt/yaml_cpp_vendor/lib:/opt/ros/foxy/opt/rviz_ogre_vendor/lib:/opt/ros/foxy/lib/x86_64-linux-gnu:/opt/ros/foxy/lib', 'BROWSER': '/root/.vscode-server/bin/3b889b090b5ad5793f524b5d1d39fda662b96a2a/bin/helpers/browser.sh', 'HOME': '/root', 'TERM_PROGRAM_VERSION': '1.69.2', 'VSCODE_IPC_HOOK_CLI': '/tmp/vscode-ipc-c21ad64b-77a2-4992-ad61-34ecc7d574c7.sock', 'ROS_PYTHON_VERSION': '3', 'VSCODE_GIT_ASKPASS_MAIN': '/root/.vscode-server/bin/3b889b090b5ad5793f524b5d1d39fda662b96a2a/extensions/git/dist/askpass-main.js', 'VSCODE_GIT_ASKPASS_NODE': '/root/.vscode-server/bin/3b889b090b5ad5793f524b5d1d39fda662b96a2a/node', 'COLORTERM': 'truecolor', 'REMOTE_CONTAINERS': 'true', 'ROS_DISTRO': 'foxy', 'REMOTE_CONTAINERS_IPC': '/tmp/vscode-remote-containers-ipc-032ae98518c758af2e2fe2bb0d49cc0f8f4516c2.sock', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'TERM': 'xterm-256color', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/foxy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/scripts/bin/', 'REMOTE_CONTAINERS_SOCKETS': '["/tmp/vscode-ssh-auth-032ae98518c758af2e2fe2bb0d49cc0f8f4516c2.sock","/root/.gnupg/S.gpg-agent"]', 'LANG': 'C.UTF-8', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'VSCODE_GIT_IPC_HANDLE': '/tmp/vscode-git-0a9401e6ef.sock', 'TERM_PROGRAM': 'vscode', 'SSH_AUTH_SOCK': '/tmp/vscode-ssh-auth-032ae98518c758af2e2fe2bb0d49cc0f8f4516c2.sock', 'AMENT_PREFIX_PATH': '/opt/ros/foxy', 'SHELL': '/bin/bash', 'VSCODE_GIT_ASKPASS_EXTRA_ARGS': '', 'PWD': '/root/cidi_ws/src/build/bynav', 'LC_ALL': 'C.UTF-8', 'PYTHONPATH': '/root/cidi_ws/src/install/bynav/lib/python3.8/site-packages:/opt/ros/foxy/lib/python3.8/site-packages', 'COLCON': '1'}, 'shell': False}
+[0.400804] (-) TimerEvent: {}
+[0.422929] (bynav) StdoutLine: {'line': b'running egg_info\n'}
+[0.423186] (bynav) StdoutLine: {'line': b'writing ../build/bynav/bynav.egg-info/PKG-INFO\n'}
+[0.423327] (bynav) StdoutLine: {'line': b'writing dependency_links to ../build/bynav/bynav.egg-info/dependency_links.txt\n'}
+[0.423407] (bynav) StdoutLine: {'line': b'writing entry points to ../build/bynav/bynav.egg-info/entry_points.txt\n'}
+[0.423462] (bynav) StdoutLine: {'line': b'writing requirements to ../build/bynav/bynav.egg-info/requires.txt\n'}
+[0.423513] (bynav) StdoutLine: {'line': b'writing top-level names to ../build/bynav/bynav.egg-info/top_level.txt\n'}
+[0.444237] (bynav) StdoutLine: {'line': b"reading manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'\n"}
+[0.444717] (bynav) StdoutLine: {'line': b"writing manifest file '../build/bynav/bynav.egg-info/SOURCES.txt'\n"}
+[0.444759] (bynav) StdoutLine: {'line': b'running build\n'}
+[0.444801] (bynav) StdoutLine: {'line': b'running build_py\n'}
+[0.444863] (bynav) StdoutLine: {'line': b'copying bynav/node.py -> /root/cidi_ws/src/build/bynav/build/lib/bynav\n'}
+[0.445031] (bynav) StdoutLine: {'line': b'running install\n'}
+[0.445661] (bynav) StdoutLine: {'line': b'running install_lib\n'}
+[0.446153] (bynav) StdoutLine: {'line': b'copying /root/cidi_ws/src/build/bynav/build/lib/bynav/node.py -> /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav\n'}
+[0.446412] (bynav) StdoutLine: {'line': b'byte-compiling /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav/node.py to node.cpython-38.pyc\n'}
+[0.447621] (bynav) StdoutLine: {'line': b'running install_data\n'}
+[0.447832] (bynav) StdoutLine: {'line': b'running install_egg_info\n'}
+[0.448679] (bynav) StdoutLine: {'line': b"removing '/root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav-0.0.0-py3.8.egg-info' (and everything under it)\n"}
+[0.448753] (bynav) StdoutLine: {'line': b'Copying ../build/bynav/bynav.egg-info to /root/cidi_ws/src/install/bynav/lib/python3.8/site-packages/bynav-0.0.0-py3.8.egg-info\n'}
+[0.449313] (bynav) StdoutLine: {'line': b'running install_scripts\n'}
+[0.458880] (bynav) StdoutLine: {'line': b'Installing bynav_node script to /root/cidi_ws/src/install/bynav/lib/bynav\n'}
+[0.459012] (bynav) StdoutLine: {'line': b"writing list of installed files to '/root/cidi_ws/src/build/bynav/install.log'\n"}
+[0.470314] (bynav) CommandEnded: {'returncode': 0}
+[0.477330] (bynav) JobEnded: {'identifier': 'bynav', 'rc': 0}
+[0.477817] (-) EventReactorShutdown: {}

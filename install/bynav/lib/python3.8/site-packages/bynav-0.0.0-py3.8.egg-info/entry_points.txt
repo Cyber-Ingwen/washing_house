@@ -1,0 +1,3 @@
+[console_scripts]
+bynav_node = bynav.node:main
+
