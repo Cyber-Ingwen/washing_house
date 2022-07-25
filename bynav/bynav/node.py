@@ -33,6 +33,7 @@ class Node_bynav(Node):
         self.ser.write("LOG COM1 INSATTA ONTIME" + str(timer_period))
 
         self.get_logger().info("串口已打开")
+        
 
         self.gps_msg = NavSatFix()
         self.imu_msg = Imu()
