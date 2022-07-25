@@ -18,8 +18,8 @@ def generate_launch_description():
             name='rviz2',
             arguments=['-d',rviz_config]
         ),
-        # launch.actions.ExecuteProcess(
-        #     cmd=['ros2', 'bag', 'play', '-l','bag/bag.db3'],
-        #     output='screen'
-        # )
+        launch.actions.ExecuteProcess(
+            cmd=['ros2', 'bag', 'play', '-l','bag/bag.db3'],
+            output='screen'
+        )
     ])
