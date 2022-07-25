@@ -8,8 +8,7 @@ $ colcon build --symlink-install
 
 ```console
 source install/setup.bash
-ros2 bag play -l bag/bag.bd3
-ros2 launch rslidar_sdk start.py
+ros2 launch rslidar_sdk start_offline.py
 ```
 
 # 2.Data from Lidar
@@ -27,3 +26,9 @@ ros2 launch rslidar_sdk start.py
 # 3.Data Output
 
 PointCloud2 data at topic /rslidar_points
+
+Rawdata from LIDAR can be published by:
+
+```console
+ros2 bag play -l bag/bag.db3
+```
