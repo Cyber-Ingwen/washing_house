@@ -1,13 +1,20 @@
 # washing_house
 
-# 0.Build (colcon)
+# 0.Environment & Build
 
-$ colcon build --symlink-install 
+```console
+sudo apt-get update
+sudo apt-get install -y libyaml-cpp-dev libpcap-dev
+```
+
+```console
+source install/setup.bash
+colcon build --symlink-install 
+```
 
 # 1.Data from ros2 bag
 
 ```console
-source install/setup.bash
 ros2 launch rslidar_sdk start_offline.py
 ```
 
