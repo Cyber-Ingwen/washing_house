@@ -38,4 +38,5 @@ Rawdata from LIDAR can be published by:
 
 ```console
 ros2 bag play -l bag/bag.db3
+ros2 run bynav point_cloud_node
 ```
