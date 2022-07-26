@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "bynav_node = bynav.node:main"
+            "bynav_node = bynav.node:main",
+            "point_cloud_node = bynav.point_cloud:main"
         ],
     },
 )
