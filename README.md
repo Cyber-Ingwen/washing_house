@@ -1,15 +1,21 @@
 # washing_house
 
-# 0.Build (colcon)
+# 0.Environment & Build
 
-$ colcon build --symlink-install 
+```console
+sudo apt-get update
+sudo apt-get install -y libyaml-cpp-dev libpcap-dev
+```
+
+```console
+source install/setup.bash
+colcon build --symlink-install 
+```
 
 # 1.Data from ros2 bag
 
 ```console
-source install/setup.bash
-ros2 bag play -l bag/bag.bd3
-ros2 launch rslidar_sdk start.py
+ros2 launch rslidar_sdk start_offline.py
 ```
 
 # 2.Data from Lidar
@@ -27,3 +33,9 @@ ros2 launch rslidar_sdk start.py
 # 3.Data Output
 
 PointCloud2 data at topic /rslidar_points
+
+Rawdata from LIDAR can be published by:
+
+```console
+ros2 bag play -l bag/bag.db3
+```
