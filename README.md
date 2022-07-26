@@ -40,3 +40,9 @@ Rawdata from LIDAR can be published by:
 ros2 bag play -l bag/bag.db3
 ros2 run bynav point_cloud_node
 ```
+
+# 4.Open VPN
+
+```console
+expect ~/Downloads/vpn/vpn.exp
+```
