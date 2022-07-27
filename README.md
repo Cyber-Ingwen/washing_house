@@ -9,7 +9,7 @@ sudo apt-get install -y libyaml-cpp-dev libpcap-dev
 
 ```sh
 colcon build --symlink-install 
-source install/setup.bashS
+source install/setup.bash
 ```
 
 # 1.Data from ros2 bagSS
