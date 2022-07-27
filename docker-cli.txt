@@ -1,5 +1,4 @@
-docker run -it  -P  -v /etc/localtime:/etc/localtime:ro   -v /tmp/.X11-unix:/tmp/.X11-unix  -v  /home/cidi/kitti:/root/kitti -e DISPLAY=unix$DISPLAY   -e GDK_SCALE   -e GDK_DPI_SCALE  fishros2/ros:foxy-desktop
+docker run -it  -p 11311:11311  -v /etc/localtime:/etc/localtime:ro   -v /tmp/.X11-unix:/tmp/.X11-unix  -v  /home/cidi/kitti:/root/kitti -e DISPLAY=unix$DISPLAY   -e GDK_SCALE   -e GDK_DPI_SCALE  fishros2/ros:foxy-desktop
 
-docker run -it  -P  -v /etc/localtime:/etc/localtime:ro   -v /tmp/.X11-unix:/tmp/.X11-unix  -v  /home/cidi/kitti:/root/kitti -e DISPLAY=unix$DISPLAY   -e GDK_SCALE   -e GDK_DPI_SCALE  fishros2/ros:noetic-desktop-full
+docker run -it  -p 11311:11311  -v /etc/localtime:/etc/localtime:ro   -v /tmp/.X11-unix:/tmp/.X11-unix  -v  /home/cidi/kitti:/root/kitti -e DISPLAY=unix$DISPLAY   -e GDK_SCALE   -e GDK_DPI_SCALE  fishros2/ros:noetic-desktop-full
 
-docker run -it  -P  -v /etc/localtime:/etc/localtime:ro   -v /tmp/.X11-unix:/tmp/.X11-unix  -v  /home/cidi/kitti:/root/kitti -e DISPLAY=unix$DISPLAY   -e GDK_SCALE   -e GDK_DPI_SCALE  chungingwen/ros:foxy-opengl
