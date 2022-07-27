@@ -2,31 +2,31 @@
 
 # 0.Environment & Build
 
-```console
+```sh
 sudo apt-get update
 sudo apt-get install -y libyaml-cpp-dev libpcap-dev
 ```
 
-```console
-source install/setup.bash
+```sh
 colcon build --symlink-install 
+source install/setup.bashS
 ```
 
-# 1.Data from ros2 bag
+# 1.Data from ros2 bagSS
 
-```console
+```sh
 ros2 launch rslidar_sdk start_offline.py
 ```
 
 # 2.Data from Lidar
-
-```console
+S
+```sh
 nano src/rslidar_sdk/config/config.yaml
 ```
 
 Set common.msg_source to 1 (MSG_FROM_LIDAR)
 
-```console
+```sh
 ros2 launch rslidar_sdk start.py
 ```
 
@@ -36,13 +36,13 @@ PointCloud2 data at topic /rslidar_points
 
 Rawdata from LIDAR can be published by:
 
-```console
+```sh
 ros2 bag play -l bag/bag.db3
 ros2 run bynav point_cloud_node
 ```
 
 # 4.Open VPN
 
-```console
+```sh
 expect ~/Downloads/vpn/vpn.exp
 ```
