@@ -19,7 +19,7 @@ ros2 launch rslidar_sdk start_offline.py
 ```
 
 # 2.Data from Lidar
-S
+
 ```sh
 nano src/rslidar_sdk/config/config.yaml
 ```
