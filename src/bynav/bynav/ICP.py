@@ -6,7 +6,7 @@ import time
 time_0 = time.perf_counter() *1000
 
 #读取电脑中的 ply 点云文件
-source = o3d.io.read_point_cloud("plys/2.ply")  #source 为需要配准的点云
+source = o3d.io.read_point_cloud("plys/1.ply")  #source 为需要配准的点云
 target = o3d.io.read_point_cloud("plys/0.ply")  #target 为目标点云
 
 #为两个点云上上不同的颜色
