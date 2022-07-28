@@ -8,17 +8,6 @@ from sensor_msgs.msg import PointCloud2, PointField
 import open3d as o3d
 
 
-_DATATYPES = {}
-_DATATYPES[PointField.INT8]    = ('b', 1)
-_DATATYPES[PointField.UINT8]   = ('B', 1)
-_DATATYPES[PointField.INT16]   = ('h', 2)
-_DATATYPES[PointField.UINT16]  = ('H', 2)
-_DATATYPES[PointField.INT32]   = ('i', 4)
-_DATATYPES[PointField.UINT32]  = ('I', 4)
-_DATATYPES[PointField.FLOAT32] = ('f', 4)
-_DATATYPES[PointField.FLOAT64] = ('d', 8)
-
-
 class Node_PC(Node):
     """
     创建point_cloud节点
@@ -100,12 +89,10 @@ class Node_PC(Node):
             if offset < field.offset:
                 fmt += 'x' * (field.offset - offset)
                 offset = field.offset
-            if field.datatype not in _DATATYPES:
-                print('Skipping unknown PointField datatype [%d]' % field.datatype, file=sys.stderr)
-            else:
-                datatype_fmt, datatype_length = _DATATYPES[field.datatype]
-                fmt    += field.count * datatype_fmt
-                offset += field.count * datatype_length
+
+            datatype_fmt, datatype_length = 'f', 4
+            fmt    += field.count * datatype_fmt
+            offset += field.count * datatype_length
 
         return fmt
 
