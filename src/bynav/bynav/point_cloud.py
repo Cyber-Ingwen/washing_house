@@ -1,8 +1,22 @@
 import time
+import math
+import struct
 import rclpy
+import numpy as np
 from rclpy.node import Node
-from sensor_msgs.msg import PointCloud2
-import open3d
+from sensor_msgs.msg import PointCloud2, PointField
+import open3d as o3d
+
+
+_DATATYPES = {}
+_DATATYPES[PointField.INT8]    = ('b', 1)
+_DATATYPES[PointField.UINT8]   = ('B', 1)
+_DATATYPES[PointField.INT16]   = ('h', 2)
+_DATATYPES[PointField.UINT16]  = ('H', 2)
+_DATATYPES[PointField.INT32]   = ('i', 4)
+_DATATYPES[PointField.UINT32]  = ('I', 4)
+_DATATYPES[PointField.FLOAT32] = ('f', 4)
+_DATATYPES[PointField.FLOAT64] = ('d', 8)
 
 
 class Node_PC(Node):
@@ -16,12 +30,84 @@ class Node_PC(Node):
         """创建并初始化接收"""
         self.sub_point_cloud = self.create_subscription(PointCloud2,"/rslidar_points",self.callback,10)
 
+        """配置可视化"""
+        self.vis = o3d.visualization.Visualizer()
+        self.vis.create_window()
+        self.o3d_pcd = o3d.geometry.PointCloud()
+
     def callback(self, data):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
-        for i in range(len(data.data)):
-            if(data.data[i]>255):
-                print("\r%s" % (data.data[i]), end="")
+        pcd_as_numpy_array = np.array(list(self.read_points(data)))
+
+        """可视化点云"""
+        self.vis.update_geometry()
+        self.o3d_pcd = o3d.geometry.PointCloud(
+                            o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
+
+        o3d.visualization.draw_geometries([self.o3d_pcd])
+        self.vis.add_geometry(self.o3d_pcd)
+ 
+        self.vis.poll_events()
+        self.vis.update_renderer()
+
+    def read_points(self, cloud, field_names=None, skip_nans=False, uvs=[]):
+        assert isinstance(cloud, PointCloud2)
+        fmt = self._get_struct_fmt(cloud.is_bigendian, cloud.fields, field_names)
+        width, height, point_step, row_step, data, isnan = cloud.width, cloud.height, cloud.point_step, cloud.row_step, cloud.data, math.isnan
+        unpack_from = struct.Struct(fmt).unpack_from
+
+        if skip_nans:
+            if uvs:
+                for u, v in uvs:
+                    p = unpack_from(data, (row_step * v) + (point_step * u))
+                    has_nan = False
+                    for pv in p:
+                        if isnan(pv):
+                            has_nan = True
+                            break
+                    if not has_nan:
+                        yield p
+            else:
+                for v in range(height):
+                    offset = row_step * v
+                    for u in range(width):
+                        p = unpack_from(data, offset)
+                        has_nan = False
+                        for pv in p:
+                            if isnan(pv):
+                                has_nan = True
+                                break
+                        if not has_nan:
+                            yield p
+                        offset += point_step
+        else:
+            if uvs:
+                for u, v in uvs:
+                    yield unpack_from(data, (row_step * v) + (point_step * u))
+            else:
+                for v in range(height):
+                    offset = row_step * v
+                    for u in range(width):
+                        yield unpack_from(data, offset)
+                        offset += point_step
+
+    def _get_struct_fmt(self, is_bigendian, fields, field_names=None):
+        fmt = '>' if is_bigendian else '<'
+
+        offset = 0
+        for field in (f for f in sorted(fields, key=lambda f: f.offset) if field_names is None or f.name in field_names):
+            if offset < field.offset:
+                fmt += 'x' * (field.offset - offset)
+                offset = field.offset
+            if field.datatype not in _DATATYPES:
+                print('Skipping unknown PointField datatype [%d]' % field.datatype, file=sys.stderr)
+            else:
+                datatype_fmt, datatype_length = _DATATYPES[field.datatype]
+                fmt    += field.count * datatype_fmt
+                offset += field.count * datatype_length
+
+        return fmt
 
 
 def main(args = None):
