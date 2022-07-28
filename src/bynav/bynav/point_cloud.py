@@ -51,6 +51,7 @@ class Node_PC(Node):
                 offset += point_step
 
     def _get_struct_fmt(self, is_bigendian, fields, field_names=None):
+        """获取数据格式"""
         fmt = '>' if is_bigendian else '<'
 
         offset = 0
@@ -59,8 +60,9 @@ class Node_PC(Node):
                 fmt += 'x' * (field.offset - offset)
                 offset = field.offset
 
-            datatype_fmt, datatype_length = 'f', 4
-            fmt    += field.count * datatype_fmt
+            datatype_fmt = 'f'
+            datatype_length = 4
+            fmt += field.count * datatype_fmt
             offset += field.count * datatype_length
 
         return fmt
