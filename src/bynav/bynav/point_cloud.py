@@ -23,7 +23,6 @@ class Node_PC(Node):
         self.vis = o3d.visualization.Visualizer()
         self.vis.create_window()
         self.o3d_pcd = o3d.geometry.PointCloud()
-        self.vis.add_geometry(self.o3d_pcd)
         self.ctr = self.vis.get_view_control()
 
     def callback(self, data):
