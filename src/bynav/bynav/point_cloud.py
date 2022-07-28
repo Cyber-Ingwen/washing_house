@@ -41,7 +41,7 @@ class Node_PC(Node):
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
 
         """可视化点云"""
-        self.vis.update_geometry()
+        self.vis.remove_geometry(self.o3d_pcd)
         self.o3d_pcd = o3d.geometry.PointCloud(
                             o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
 
