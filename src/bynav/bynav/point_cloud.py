@@ -23,6 +23,7 @@ class Node_PC(Node):
         self.vis = o3d.visualization.Visualizer()
         self.vis.create_window()
         self.o3d_pcd = o3d.geometry.PointCloud()
+        self.vis.add_geometry(self.o3d_pcd)
 
     def callback(self, data):
         """读取解析数据"""
@@ -31,12 +32,8 @@ class Node_PC(Node):
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
-        self.o3d_pcd = o3d.geometry.PointCloud(
-                            o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
-
-        o3d.visualization.draw_geometries([self.o3d_pcd])
+        self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
         self.vis.add_geometry(self.o3d_pcd)
- 
         self.vis.poll_events()
         self.vis.update_renderer()
 
