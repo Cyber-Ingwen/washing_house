@@ -15,6 +15,7 @@ source install/setup.bash
 ```sh
 apt install pip
 pip install open3d
+pip install open3d
 ```
 
 # 1.Data from ros2 bagSS
