@@ -17,7 +17,7 @@ class Node_PC(Node):
         self.get_logger().info("point_cloud节点已创建")
 
         """创建并初始化接收"""
-        self.sub_point_cloud = self.create_subscription(PointCloud2,"/rslidar_points",self.callback,10)
+        self.sub_point_cloud = self.create_subscription(PointCloud2,"/kitti/velo/pointcloud",self.callback,10)
 
         """配置可视化"""
         self.vis = o3d.visualization.Visualizer()
@@ -38,6 +38,13 @@ class Node_PC(Node):
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
         self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
+
+        # intensity = np.zeros((np.shape(pcd_as_numpy_array)[0],3))
+        # intensity[:,0] = pcd_as_numpy_array[:,3]
+        # intensity[:,1] = pcd_as_numpy_array[:,3]
+        # intensity[:,2] = pcd_as_numpy_array[:,3]
+        # self.o3d_pcd.colors = o3d.utility.Vector3dVector(intensity)
+
         self.vis.add_geometry(self.o3d_pcd)
         self.vis.poll_events()
         self.vis.update_renderer()
@@ -64,11 +71,11 @@ class Node_PC(Node):
             if offset < field.offset:
                 fmt += 'x' * (field.offset - offset)
                 offset = field.offset
-
-            datatype_fmt = 'f'
-            datatype_length = 4
-            fmt += field.count * datatype_fmt
-            offset += field.count * datatype_length
+            else:
+                datatype_fmt = 'f'
+                datatype_length = 4
+                fmt += field.count * datatype_fmt
+                offset += field.count * datatype_length
 
         return fmt
 
