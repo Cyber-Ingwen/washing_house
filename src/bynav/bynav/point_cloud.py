@@ -23,6 +23,7 @@ class Node_PC(Node):
         self.vis = o3d.visualization.Visualizer()
         self.vis.create_window()
         self.o3d_pcd = o3d.geometry.PointCloud()
+        self.o3d_pcd_curv = o3d.geometry.PointCloud()
         self.ctr = self.vis.get_view_control()
 
         """计算曲率"""
@@ -33,14 +34,24 @@ class Node_PC(Node):
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
         self.pcn = pcd_as_numpy_array
-        self.pcn = self.Cul_Curv.process(self.pcn)
+        self.curv_pcn = self.Cul_Curv.process(self.pcn)
+        self.curv_pcn = np.array(self.curv_pcn)
 
         """可视化点云"""
+        self.vis.remove_geometry(self.o3d_pcd_curv)
         self.vis.remove_geometry(self.o3d_pcd)
-        self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
+        self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.pcn[:,:3]))
+        self.o3d_pcd_curv = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.curv_pcn[:,:3]))
+        
+        """颜色"""
+        self.o3d_pcd.paint_uniform_color([60/255, 80/255, 120/255])
+        self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
+        
         self.vis.add_geometry(self.o3d_pcd)
+        self.vis.add_geometry(self.o3d_pcd_curv)
         self.vis.poll_events()
         self.vis.update_renderer()
+        
 
     def read_points(self, cloud):
         """读取点云数据"""
@@ -75,26 +86,42 @@ class Node_PC(Node):
 
 class Cul_Curvature():
     def __init__(self):
-        pass
+        self.processed_pcn = []
     
-    def process(self, pcd):
-        a, b = pcd.shape
+    def process(self, pcn):
+        self.processed_pcn = []
+        list = []
+        a, b = pcn.shape
         for i in range(a):
-            x = pcd[i][0]
-            y = pcd[i][1]
-            z = pcd[i][2]
+            x = pcn[i][0]
+            y = pcn[i][1]
+            z = pcn[i][2]
             
-            phi = math.atan2(z, math.sqrt(x**2 + y**2))
-            phi = phi * 180 / math.pi
+            if i % 16 >= 4:
+                self.processed_pcn.append([x, y, z])
+                    
+        a = len(self.processed_pcn)
+        for i in range(a):
+            x = self.processed_pcn[i][0]
+            y = self.processed_pcn[i][1]
+            z = self.processed_pcn[i][2]
 
-            theta =  math.atan2(y, x)
-            theta = theta * 180 / math.pi
-
-            if not math.isnan(phi):
-                print("\r phi = %s " % (phi), end = "")
-            #time.sleep(0.4)
-
-        return pcd 
+            curv = 0
+            if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < a)):
+                for j in range(5):
+                    curv += (x - self.processed_pcn[i - 12 * j][0])**2 \
+                            +  (y - self.processed_pcn[i - 12 * j][1])**2 \
+                            +  (z - self.processed_pcn[i - 12 * j][2])**2 
+                    curv += (x - self.processed_pcn[i + 12 * j][0])**2 \
+                            +  (y - self.processed_pcn[i + 12 * j][1])**2 \
+                            +  (z - self.processed_pcn[i + 12 * j][2])**2 
+            
+            if not math.isnan(curv): 
+                if(curv < 100) & (curv > 10):
+                    list.append([x, y, z, curv])
+                    print("\r curv = %s " % (curv), end = "")
+            
+        return list
 
 
 def main(args = None):
