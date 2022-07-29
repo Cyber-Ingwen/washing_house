@@ -78,6 +78,22 @@ class Cul_Curvature():
         pass
     
     def process(self, pcd):
+        a, b = pcd.shape
+        for i in range(a):
+            x = pcd[i][0]
+            y = pcd[i][1]
+            z = pcd[i][2]
+            
+            phi = math.atan2(z, math.sqrt(x**2 + y**2))
+            phi = phi * 180 / math.pi
+
+            theta =  math.atan2(y, x)
+            theta = theta * 180 / math.pi
+
+            if not math.isnan(phi):
+                print("\r phi = %s " % (phi), end = "")
+            #time.sleep(0.4)
+
         return pcd 
 
 
