@@ -25,10 +25,15 @@ class Node_PC(Node):
         self.o3d_pcd = o3d.geometry.PointCloud()
         self.ctr = self.vis.get_view_control()
 
+        """计算曲率"""
+        self.Cul_Curv = Cul_Curvature()
+
     def callback(self, data):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
+        self.pcn = pcd_as_numpy_array
+        self.pcn = self.Cul_Curv.process(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
@@ -66,6 +71,14 @@ class Node_PC(Node):
             offset += field.count * datatype_length
 
         return fmt
+
+
+class Cul_Curvature():
+    def __init__(self):
+        pass
+    
+    def process(self, pcd):
+        return pcd 
 
 
 def main(args = None):
