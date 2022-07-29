@@ -43,12 +43,23 @@ class Node_PC(Node):
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd_curv)
         self.vis.remove_geometry(self.o3d_pcd)
+<<<<<<< HEAD
         self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.pcn[:,:3]))
         self.o3d_pcd_curv = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.curv_pcn[:,:3]))
         
         """颜色"""
         self.o3d_pcd.paint_uniform_color([60/255, 80/255, 120/255])
         self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
+=======
+        self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pcd_as_numpy_array[:,:3]))
+
+        # intensity = np.zeros((np.shape(pcd_as_numpy_array)[0],3))
+        # intensity[:,0] = pcd_as_numpy_array[:,3]
+        # intensity[:,1] = pcd_as_numpy_array[:,3]
+        # intensity[:,2] = pcd_as_numpy_array[:,3]
+        # self.o3d_pcd.colors = o3d.utility.Vector3dVector(intensity)
+
+>>>>>>> a9c6962600e8ca98a63c59db6f294e937a0b3669
         self.vis.add_geometry(self.o3d_pcd)
         self.vis.add_geometry(self.o3d_pcd_curv)
         self.vis.run()
@@ -78,11 +89,11 @@ class Node_PC(Node):
             if offset < field.offset:
                 fmt += 'x' * (field.offset - offset)
                 offset = field.offset
-
-            datatype_fmt = 'f'
-            datatype_length = 4
-            fmt += field.count * datatype_fmt
-            offset += field.count * datatype_length
+            else:
+                datatype_fmt = 'f'
+                datatype_length = 4
+                fmt += field.count * datatype_fmt
+                offset += field.count * datatype_length
 
         return fmt
 

@@ -2,3 +2,4 @@ log/
 install/
 build/
 .vscode/
+src/bynav/bynav/__pycache__
