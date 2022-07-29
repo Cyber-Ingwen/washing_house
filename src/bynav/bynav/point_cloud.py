@@ -17,7 +17,7 @@ class Node_PC(Node):
         self.get_logger().info("point_cloud节点已创建")
 
         """创建并初始化接收"""
-        self.sub_point_cloud = self.create_subscription(PointCloud2,"/kitti/velo/pointcloud",self.callback,10)
+        self.sub_point_cloud = self.create_subscription(PointCloud2,"/rslidar_points",self.callback,10)
 
         """配置可视化"""
         self.vis = o3d.visualization.Visualizer()
