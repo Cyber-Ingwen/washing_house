@@ -4,7 +4,7 @@ import struct
 import rclpy
 import numpy as np
 from rclpy.node import Node
-from sensor_msgs.msg import PointCloud2, PointField
+from sensor_msgs.msg import PointCloud2
 import open3d as o3d
 
 
