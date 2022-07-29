@@ -12,6 +12,11 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
+```sh
+apt install pip
+pip install open3d
+```
+
 # 1.Data from ros2 bagSS
 
 ```sh
@@ -39,4 +44,18 @@ Rawdata from LIDAR can be published by:
 ```sh
 ros2 bag play -l bag/bag.db3
 ros2 run bynav point_cloud_node
+```
+
+# 4.Display On Windows
+
+Download MobaXterm on windows devices on:
+
+```sh
+https://mobaxterm.mobatek.net/
+```
+
+export display by:
+
+```sh
+export DISPLAY=172.16.196.215:0.0
 ```
