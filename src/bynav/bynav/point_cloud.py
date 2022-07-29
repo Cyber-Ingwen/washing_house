@@ -33,9 +33,12 @@ class Node_PC(Node):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
+
+
         self.pcn = pcd_as_numpy_array
         self.curv_pcn = self.Cul_Curv.process(self.pcn)
-        self.curv_pcn = np.array(self.curv_pcn)
+        if(self.Cul_Curv.edge_points != []):
+            self.Cul_Curv.process2(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd_curv)
@@ -46,11 +49,11 @@ class Node_PC(Node):
         """颜色"""
         self.o3d_pcd.paint_uniform_color([60/255, 80/255, 120/255])
         self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
-        
         self.vis.add_geometry(self.o3d_pcd)
         self.vis.add_geometry(self.o3d_pcd_curv)
-        self.vis.poll_events()
+        self.vis.run()
         self.vis.update_renderer()
+        self.vis.poll_events()
         
 
     def read_points(self, cloud):
@@ -87,10 +90,14 @@ class Node_PC(Node):
 class Cul_Curvature():
     def __init__(self):
         self.processed_pcn = []
+        self.edge_points = []
+        self.plane_points = []
     
     def process(self, pcn):
         self.processed_pcn = []
         list = []
+        list2 = []
+
         a, b = pcn.shape
         for i in range(a):
             x = pcn[i][0]
@@ -107,21 +114,53 @@ class Cul_Curvature():
             z = self.processed_pcn[i][2]
 
             curv = 0
+            sum = [0, 0, 0]
             if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < a)):
                 for j in range(5):
-                    curv += (x - self.processed_pcn[i - 12 * j][0])**2 \
-                            +  (y - self.processed_pcn[i - 12 * j][1])**2 \
-                            +  (z - self.processed_pcn[i - 12 * j][2])**2 
-                    curv += (x - self.processed_pcn[i + 12 * j][0])**2 \
-                            +  (y - self.processed_pcn[i + 12 * j][1])**2 \
-                            +  (z - self.processed_pcn[i + 12 * j][2])**2 
+                    sum[0] += (x - self.processed_pcn[i - 12 * j][0])
+                    sum[0] += (x - self.processed_pcn[i + 12 * j][0])
+                    sum[1] += (y - self.processed_pcn[i - 12 * j][1])
+                    sum[1] += (y - self.processed_pcn[i + 12 * j][1])
+                    sum[2] += (z - self.processed_pcn[i - 12 * j][2])
+                    sum[2] += (z - self.processed_pcn[i + 12 * j][2])
+
+                curv = sum[0] ** 2 + sum[1] ** 2 + sum[2] ** 2 
             
             if not math.isnan(curv): 
-                if(curv < 100) & (curv > 10):
+                if(curv < 100) & (curv > 0.2):
                     list.append([x, y, z, curv])
-                    print("\r curv = %s " % (curv), end = "")
+                    #print("\r curv = %s " % (curv), end = "")
+                elif(curv < 0.1) & (curv > 0):
+                    list2.append([x, y, z, curv])
+                    #print("\r curv = %s " % (curv), end = "")
             
+        list = np.array(list)
+        list2 = np.array(list2)
+
+        self.edge_points = list[:,:3]
+        self.plane_points = list2[:,:3]
+
         return list
+
+    def process2(self, pcn):
+        a, b = pcn.shape
+        for i in range(a):
+            x = pcn[i][0]
+            y = pcn[i][1]
+            z = pcn[i][2]
+
+            vec0 = np.array([x, y, z])
+            vec_list = np.array(self.edge_points)
+            distance = np.linalg.norm(vec_list - vec0, axis = 1)
+            j = np.argmax(-distance)
+
+            d = np.linalg.norm(vec_list[j] - vec_list[j-1])
+            s = np.linalg.norm(np.cross(vec_list[j] - vec0, vec_list[j-1] - vec0))
+            h = s / d
+
+            print("\r h = %s " % (h), end = "")
+
+        return 0
 
 
 def main(args = None):
