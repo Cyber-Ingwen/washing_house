@@ -121,7 +121,7 @@ class LEGO_cloudhandler():
         endOrientation=math.atan2(pcb[a-1][1],pcb[a-1][0])+2*math.pi
         if endOrientation-startOrientation>3*math.pi:
             startOrientation+=2*math.pi
-        else if endOrientation-startOrientation<math.pi:
+        elif endOrientation-startOrientation<math.pi:
             orientationDiff=endOrientation-startOrientation
         return startOrientation,endOrientation,orientationDiff
     
@@ -132,8 +132,8 @@ class LEGO_cloudhandler():
             Y=pcb[i][1]
             Z=pcb[i][2]
             #give row and column index for the point
-            verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))#find the angle btween p-o and plane x-y
-            rowID=(verticalAngle+)
+            verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))*180/math.pi#find the angle btween p-o and plane x-y
+            rowID=(verticalAngle+15)/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
 
 
 
