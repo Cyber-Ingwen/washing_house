@@ -1,4 +1,5 @@
 import math
+from operator import ne
 import numpy as np
 
 
@@ -10,7 +11,7 @@ class LOAM():
         self.feature_extraction = FeatureExtraction()
         self.lidar_odometry = LidarOdometry()
 
-    def input(data):
+    def input(self, data):
         self.feature_extraction.process(data)
 
 
@@ -21,6 +22,7 @@ class FeatureExtraction():
     def __init__(self):
         self.edge_points = []
         self.plane_points = []
+        self.features = []
     
     def process(self, pcn):
         self.processed_pcn = []
@@ -48,7 +50,7 @@ class FeatureExtraction():
             curv = -1
             sum = [0, 0, 0]
             
-            if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < a)):
+            if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < len(self.processed_pcn))):
                 for j in range(5):
                     next_index = i + 12 * j
                     last_index = i - 12 * j
@@ -71,7 +73,8 @@ class FeatureExtraction():
             
         self.edge_points = (np.array(self.edge_points))[:,:3]
         self.plane_points = (np.array(self.plane_points))[:,:3]
-
+        self.features = [self.edge_points, self.plane_points]
+        
         return 1
 
 
@@ -80,4 +83,39 @@ class LidarOdometry():
     LOAM算法激光里程计
     """
     def __init__(self):
-        pass
+        self.features = []
+
+    def init(self, features):
+        self.last_features = features
+
+    def matching(self, features):
+        [edge_points, plane_points] = self.features
+        
+        """边缘点匹配"""
+        for i in range(edge_points.shape[0]):
+            edge_point = np.array(edge_points[i][:2])
+            last_points = np.array(edge_points)
+            distance = np.linalg.norm(last_points - edge_point, axis = 1)
+            nearest_index = np.argmax(-distance)
+
+            d = np.linalg.norm(last_points[nearest_index] - last_points[nearest_index - 1 if nearest_index-1 >= 0 else nearest_index + 1])
+            s = np.linalg.norm(np.cross(last_points[nearest_index] - edge_point, last_points[nearest_index - 1 if nearest_index - 1 >= 0 else nearest_index + 1] - edge_point))
+            h = (s / d) if d != 0 else -1
+
+            print("\r h = %s " % (h), end = "")
+
+        """平面点匹配"""
+        for i in range(plane_points.shape[0]):
+            plane_point = np.array(plane_points[i][:2])
+            last_points = np.array(plane_points)
+            distance = np.linalg.norm(last_points - plane_point, axis = 1)
+            nearest_index = np.argmax(-distance)
+
+            d = np.linalg.norm(last_points[nearest_index] - last_points[nearest_index - 1 if nearest_index-1 >= 0 else nearest_index + 1])
+            s = np.linalg.norm(np.cross(last_points[nearest_index] - plane_point, last_points[nearest_index - 1 if nearest_index - 1 >= 0 else nearest_index + 1] - plane_point))
+            h = (s / d) if d != 0 else -1
+
+            print("\r h = %s " % (h), end = "")
+        
+        self.last_features = features
+        

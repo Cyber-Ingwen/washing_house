@@ -24,7 +24,7 @@ class Node_PC(Node):
         self.get_logger().info("point_cloud节点已创建")
 
         """创建并初始化接收"""
-        self.sub_point_cloud = self.create_subscription(PointCloud2,"/rslidar_points",self.callback,10)
+        self.sub_point_cloud = self.create_subscription(PointCloud2, "/rslidar_points", self.callback, 10)
 
         """配置可视化"""
         self.vis = o3d.visualization.Visualizer()
@@ -40,9 +40,7 @@ class Node_PC(Node):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
-
-
-        self.pcn = pcd_as_numpy_array
+        self.pcn = self.label(pcd_as_numpy_array)
         self.curv_pcn = self.Cul_Curv.process(self.pcn)
         if(self.Cul_Curv.edge_points != []):
             self.Cul_Curv.process2(self.pcn)
@@ -52,8 +50,6 @@ class Node_PC(Node):
         self.vis.remove_geometry(self.o3d_pcd)
         self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.pcn[:,:3]))
         self.o3d_pcd_curv = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.curv_pcn[:,:3]))
-        
-        """颜色"""
         self.o3d_pcd.paint_uniform_color([60/255, 80/255, 120/255])
         self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
         self.vis.add_geometry(self.o3d_pcd)
@@ -61,7 +57,24 @@ class Node_PC(Node):
         self.vis.run()
         self.vis.update_renderer()
         self.vis.poll_events()
+    
+    def label(self, pcn):
+        """给点云标注角度和线"""
+        scan_mat = np.zeros(pcn.shape[0])
+        degree_mat = np.zeros(pcn.shape[0])
         
+        if pcn.shape[0] == 28800:
+            for i in range(pcn.shape[0]):
+                scan_mat[i] = i % 16
+                degree_mat[i] = i % 1800
+        else:
+            pass # 可改为计算
+            
+        scan_mat = np.resize(scan_mat, (pcn.shape[0], 1))
+        degree_mat = np.resize(degree_mat, (pcn.shape[0], 1))
+        pcn = np.concatenate((pcn, scan_mat, degree_mat), axis = 1)
+        
+        return pcn
 
     def read_points(self, cloud):
         """读取点云数据"""
