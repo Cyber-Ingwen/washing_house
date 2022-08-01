@@ -68,7 +68,7 @@ class Node_PC(Node):
         
         if pcn.shape[0] == 28800:
             for i in range(pcn.shape[0]):
-                scan_mat[i] = i % 16
+                scan_mat[i] = (i % 16) if (i % 16) < 9 else 25 - (i % 16)
                 degree_mat[i] = i % 1800
         else:
             pass # 可改为计算
