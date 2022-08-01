@@ -114,7 +114,11 @@ class Cul_Curvature():
 class LEGO_cloudhandler():
     def __init__(self):
         self.rangematrix=np.zeros((16,1800))
-        self.index=np.zeros((1,28800))
+        self.index=np.zeros(28800)
+        self.queueIndX=np.zeros(28800)
+        self.queueIndY=np.zeros(28800)
+        self.allPushedIndX=np.zeros(28800)#used to track points of a segmented object
+        self.allPushedIndY=np.zeros(28800)
         pass
 
     def startendangle(self,pcd): #to find start and end angle of the clooud
@@ -184,7 +188,25 @@ class LEGO_cloudhandler():
                 if abs(angle)<=10:
                     groundmetrix[up]=1
                     groundmetrix[low]=1
-                
+        return groundmetrix
+    
+    def labelcomponents(self,row,col):
+        self.queueIndX[0]=row
+        self.queueIndY[0]=col
+        self.allPushedIndX[0]=row
+        self.allPushedIndY[0]=col
+        queuesize=1
+        queuestartInd=0
+        queueendInd=1
+        allpushedindsize=1
+        while(queuesize>0):#
+
+
+        
+
+    def cloudsegmentation(self,pcd,groundmetrix):#point cloud segmentation,to remove clusters with few points
+
+
                     
 
 
