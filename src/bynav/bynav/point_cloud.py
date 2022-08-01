@@ -151,7 +151,16 @@ class LEGO_cloudhandler():
             pcd[i][3]=distance
             index=colID+rowID*1800
             self.index[i]=index
-        m=np.insert(pcd,4,values=index,axis=1)
+        pcd=np.insert(pcd,4,values=index,axis=1)
+        return pcd
+    
+    def markground(self,pcd): #mark ground points
+        #marker:-1 no valid info, 0 initial value,after validation,not ground, 1 ground
+        for i in range(1799,-1,-1):
+            for j in range(5,-1,-1):#why 5: here we have 4 scans that are supposed to scan to the ground
+            lowerID=i+j*1800
+            upperID=i+(j+1)*1800
+            if 
 
 
 
