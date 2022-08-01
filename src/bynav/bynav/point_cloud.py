@@ -13,6 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
 from Cul_Curvature import Cul_Curvature
+from LOAM import LOAM
 
 
 class Node_PC(Node):
@@ -33,14 +34,18 @@ class Node_PC(Node):
         self.o3d_pcd_curv = o3d.geometry.PointCloud()
         self.ctr = self.vis.get_view_control()
 
-        """计算曲率"""
+        """LOAM算法"""
         self.Cul_Curv = Cul_Curvature()
+        self.loam = LOAM()
 
     def callback(self, data):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
         self.pcn = self.label(pcd_as_numpy_array)
+        
+        self.loam.input(self.pcn)
+        
         self.curv_pcn = self.Cul_Curv.process(self.pcn)
         if(self.Cul_Curv.edge_points != []):
             self.Cul_Curv.process2(self.pcn)

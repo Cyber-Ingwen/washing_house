@@ -10,9 +10,23 @@ class LOAM():
     def __init__(self):
         self.feature_extraction = FeatureExtraction()
         self.lidar_odometry = LidarOdometry()
+        self.init_flag = 0
 
     def input(self, data):
-        self.feature_extraction.process(data)
+        features = self.feature_extraction.process(data)
+        
+        if self.init_flag == 0:
+            self.lidar_odometry.init(features)
+            self.init_flag = 1
+        
+        elif self.init_flag == 1:
+            self.lidar_odometry.matching(features)
+            
+        else:
+            print("shabi")
+        
+    def output(self):
+        return "shabi"
 
 
 class FeatureExtraction():
@@ -83,18 +97,19 @@ class LidarOdometry():
     LOAM算法激光里程计
     """
     def __init__(self):
-        self.features = []
+        self.last_features = []
 
     def init(self, features):
         self.last_features = features
 
     def matching(self, features):
-        [edge_points, plane_points] = self.features
+        [edge_points, plane_points] = features
+        [last_edge_points, last_plane_points] = self.last_features
         
         """边缘点匹配"""
         for i in range(edge_points.shape[0]):
             edge_point = np.array(edge_points[i][:2])
-            last_points = np.array(edge_points)
+            last_points = np.array(last_edge_points)
             distance = np.linalg.norm(last_points - edge_point, axis = 1)
             nearest_index = np.argmax(-distance)
 
@@ -102,12 +117,12 @@ class LidarOdometry():
             s = np.linalg.norm(np.cross(last_points[nearest_index] - edge_point, last_points[nearest_index - 1 if nearest_index - 1 >= 0 else nearest_index + 1] - edge_point))
             h = (s / d) if d != 0 else -1
 
-            print("\r h = %s " % (h), end = "")
+            #print("\r h = %s " % (h), end = "")
 
         """平面点匹配"""
         for i in range(plane_points.shape[0]):
             plane_point = np.array(plane_points[i][:2])
-            last_points = np.array(plane_points)
+            last_points = np.array(last_plane_points)
             distance = np.linalg.norm(last_points - plane_point, axis = 1)
             nearest_index = np.argmax(-distance)
 
