@@ -113,8 +113,10 @@ class Cul_Curvature():
          
 class LEGO_cloudhandler():
     def __init__(self):
+        self.rangematrix=np.zeros((16,1800))
+        self.index=np.zeros((1,28800))
         pass
-    
+
     def startendangle(self,pcd): #to find start and end angle of the clooud
         a, b = pcb.shape
         startOrientation=math.atan2(pcb[0][1],pcb[0][0])
@@ -133,11 +135,25 @@ class LEGO_cloudhandler():
             Z=pcb[i][2]
             #give row and column index for the point
             verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))*180/math.pi#find the angle btween p-o and plane x-y
-            rowID=(verticalAngle+15)/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
-            if (rowID<0 or rowID>16): # finish all the labels
+            rowID=round(verticalAngle-(-15))/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
+            if rowID<0 or rowID>16: # finish all the labels
                 continue
             horizonAngle =atan2(X,Y)*180/math.pi#find the angle on the plane x-y
-            colID=-round((horizonAngle-90.0)/0.2)#0.2 refers to horizontal angle resolution
+            colID=-round((horizonAngle-90.0)/0.2)+1800/2#0.2 refers to horizontal angle resolution,1800 refers to horizon scan
+            if colID>=1800:
+                colID=-1800
+            if colID<0 or colID>=1800:
+                continue
+            distance=math.sqrt(X*X+Y*Y+Z*Z)
+            if distance<1.0: #filter out point winthin 1 meter around the lidar
+                continue
+            self.rangematrix[rowID][colID]=distance #put all the range in this array
+            pcd[i][3]=distance
+            index=colID+rowID*1800
+            self.index[i]=index
+        m=np.insert(pcd,4,values=index,axis=1)
+
+
 
 
 
