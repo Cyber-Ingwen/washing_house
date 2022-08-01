@@ -28,6 +28,9 @@ class Node_PC(Node):
         """计算曲率"""
         self.Cul_Curv = Cul_Curvature()
 
+        '''handle pointcloud'''
+        self.LEGO_cloudhandler=LEGO_cloudhandler()
+
     def callback(self, data):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
@@ -78,11 +81,15 @@ class Cul_Curvature():
         pass
     
     def process(self, pcd):
-        a, b = pcd.shape
+        m=pcd
+        print(m.shape)
+        delete_index=[]
+        #delete_angle=[]
+        a, b = m.shape
         for i in range(a):
-            x = pcd[i][0]
-            y = pcd[i][1]
-            z = pcd[i][2]
+            x = m[i][0]
+            y = m[i][1]
+            z = m[i][2]
             
             phi = math.atan2(z, math.sqrt(x**2 + y**2))
             phi = phi * 180 / math.pi
@@ -93,8 +100,43 @@ class Cul_Curvature():
             if not math.isnan(phi):
                 print("\r phi = %s " % (phi), end = "")
             #time.sleep(0.4)
+                '''if phi<-8:
+                    delete_index.append(i)
+                    #delete_angle.append(phi)
+        #print(delete_index,delete_angle)
+        array_select = np.delete(m,delete_index)
+        print(array_select.shape)
+        return array_select'''
+    
+    #def dataselect(self,pcd):
 
-        return pcd 
+         
+class LEGO_cloudhandler():
+    def __init__(self):
+        pass
+    
+    def startendangle(self,pcd): #to find start and end angle of the clooud
+        a, b = pcb.shape
+        startOrientation=math.atan2(pcb[0][1],pcb[0][0])
+        endOrientation=math.atan2(pcb[a-1][1],pcb[a-1][0])+2*math.pi
+        if endOrientation-startOrientation>3*math.pi:
+            startOrientation+=2*math.pi
+        else if endOrientation-startOrientation<math.pi:
+            orientationDiff=endOrientation-startOrientation
+        return startOrientation,endOrientation,orientationDiff
+    
+    def pointcloudproject(slef,pcd): #range image projection
+        num,dem=pcd.shape
+        for i in range(num):
+            X=pcb[i][0]
+            Y=pcb[i][1]
+            Z=pcb[i][2]
+            #give row and column index for the point
+            verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))#find the angle btween p-o and plane x-y
+            rowID=(verticalAngle+)
+
+
+
 
 
 def main(args = None):
