@@ -135,7 +135,7 @@ class LEGO_cloudhandler():
             Z=pcb[i][2]
             #give row and column index for the point
             verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))*180/math.pi#find the angle btween p-o and plane x-y
-            rowID=round(verticalAngle-(-15))/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
+            rowID=(verticalAngle-(-15))/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
             if rowID<0 or rowID>16: # finish all the labels
                 continue
             horizonAngle =atan2(X,Y)*180/math.pi#find the angle on the plane x-y
@@ -155,12 +155,37 @@ class LEGO_cloudhandler():
         return pcd
     
     def markground(self,pcd): #mark ground points
-        #marker:-1 no valid info, 0 initial value,after validation,not ground, 1 ground
+        #marker:0 no valid info, -1 initial value,after validation,not ground, 1 ground
+        groundmetrix=np.zeros(28800)
         for i in range(1799,-1,-1):
             for j in range(5,-1,-1):#why 5: here we have 4 scans that are supposed to scan to the ground
-            lowerID=i+j*1800
-            upperID=i+(j+1)*1800
-            if 
+                lowerID=i+j*1800
+                upperID=i+(j+1)*1800
+                for m in range(len(self.index)):
+                    if self.index[m]=lowerID:
+                        low=m
+                        for n in range(m,len(self.index)):
+                            if self.index[n]=upperID:
+                                up=n
+                if groundmetrix[m]==-1 or groundmetrix[n]==-1:
+                    continue
+                A=self.index[low]
+                x1=A[0]
+                y1=A[1]
+                z1=A[2]
+                B=self.index[up]
+                x2=B[0]
+                y2=B[1]
+                z2=B[2]
+                disx=x1-x2
+                disy=y1-y2
+                disz=z1-z2
+                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*/math.pi
+                if abs(angle)<=10:
+                    groundmetrix[up]=1
+                    groundmetrix[low]=1
+                
+                    
 
 
 
