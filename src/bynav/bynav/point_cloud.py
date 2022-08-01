@@ -134,7 +134,10 @@ class LEGO_cloudhandler():
             #give row and column index for the point
             verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))*180/math.pi#find the angle btween p-o and plane x-y
             rowID=(verticalAngle+15)/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
-
+            if (rowID<0 or rowID>16): # finish all the labels
+                continue
+            horizonAngle =atan2(X,Y)*180/math.pi#find the angle on the plane x-y
+            colID=-round((horizonAngle-90.0)/0.2)#0.2 refers to horizontal angle resolution
 
 
 
