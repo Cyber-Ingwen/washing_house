@@ -73,6 +73,6 @@ class Cul_Curvature():
             s = np.linalg.norm(np.cross(vec_list[j] - vec0, vec_list[j-1] - vec0))
             h = s / d
 
-            print("\r h = %s " % (h), end = "")
+            #print("\r h = %s " % (h), end = "")
 
         return 0
