@@ -13,16 +13,7 @@ class LOAM():
 
     def input(self, data):
         self.feature_extraction.process(data)
-        
-        if self.init_flag == 0:
-            self.lidar_odometry.init(self.feature_extraction.features)
-            self.init_flag = 1
-        
-        elif self.init_flag == 1:
-            self.lidar_odometry.matching(self.feature_extraction.features)
-            
-        else:
-            print("shabi")
+        self.lidar_odometry.process(self.feature_extraction.features)
         
     def output(self):
         return "shabi"
@@ -94,13 +85,39 @@ class LidarOdometry():
     """
     def __init__(self):
         self.last_features = []
+        self.init_flag = 0
+        self.T_list = []
+        
+    def process(self, features):
+        """主程序"""
+        if self.init_flag == 0:
+            self.last_features = features
+            self.init_flag = 1
+            
+        elif self.init_flag == 1:
+            self.NewtonGussian(features)
+            self.last_features = features
 
-    def init(self, features):
-        self.last_features = features
-
-    def matching(self, features):
+    def NewtonGussian(self, features):
+        """牛顿高斯法优化"""
+        x = np.zeros(6)
+        j = self._get_jacobi()
+        self.matching(features, x)
+        f = np.array([self.D1, self.D2])
+        x = x - np.matmut(np.matmut(np.linalg.inv(np.matmul(j.T, j)), j.T), f)
+        self.T_list.append(x)
+        
+        return 1
+    
+    def matching(self, features, T):
+        """特征点匹配"""
         [edge_points, plane_points] = features
         [last_edge_points, last_plane_points] = self.last_features
+        
+        print("________:", edge_points.shape)
+        edge_points = self.transform(edge_points, T)
+        
+        print("________:", edge_points.shape)
         
         """边缘点匹配"""
         for i in range(edge_points.shape[0]):
@@ -133,5 +150,42 @@ class LidarOdometry():
 
             s = (np.cross(last_points[nearest_index] - last_points[near_angle_index], last_points[nearest_index] - last_points[near_scan_index]))
             h = np.linalg.norm(np.dot(last_points[nearest_index] - plane_point, s / np.linalg.norm(s)))
-            
-        self.last_features = features
+
+    def _get_jacobi(self):
+        j_11 = 0
+        j_12 = 0
+        j_13 = 0
+        j_14 = 0
+        j_15 = 0
+        j_16 = 0
+        j_21 = 0
+        j_22 = 0
+        j_23 = 0
+        j_24 = 0
+        j_25 = 0
+        j_26 = 0
+        
+    def _get_R(self, T):
+        alpha = T[0]
+        beta = T[1]
+        gamma = T[2]
+        R = np.array([[np.cos(beta)*np.cos(gamma), -np.sin(gamma)*np.cos(beta), np.sin(beta)], [np.sin(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(gamma)*np.cos(alpha), -np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma), -np.sin(alpha)*np.cos(beta)], [np.sin(alpha)*np.sin(gamma) - np.sin(beta)*np.cos(alpha)*np.cos(gamma), np.sin(alpha)*np.cos(gamma) + np.sin(beta)*np.sin(gamma)*np.cos(alpha), np.cos(alpha)*np.cos(beta)]])
+        
+        return R
+
+    def _get_t(self, T):
+        x = T[3]
+        y = T[4]
+        z = T[5]
+        t = np.array([x, y, z])
+        
+        return t
+    
+    def transform(self, x, T):
+        R = self._get_R(T)
+        t = self._get_t(T)
+        
+        for i in range(x.shape[0]):
+            x[i] = np.matmul(R, x[i]) + t
+        
+        return x
