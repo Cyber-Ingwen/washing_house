@@ -38,7 +38,7 @@ class Node_PC(Node):
         self.pcn = pcd_as_numpy_array
         self.pcn = self.label(pcd_as_numpy_array)
         #self.pcn = self.Cul_Curv.process(self.pcn)
-        #self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
+        self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
         self.pcn=self.LEGO_cloudhandler.markground(self.pcn)
 
         """可视化点云"""
@@ -58,6 +58,7 @@ class Node_PC(Node):
                 scan_mat[i] = (i % 16) if (i % 16) < 9 else 24 - (i % 16)
                 #print(scan_mat[i])
                 degree_mat[i] = i % 1800
+                #print(degree_mat[i])
         else:
             pass # 可改为计算
             
@@ -135,7 +136,7 @@ class Cul_Curvature():
 class LEGO_cloudhandler():
     def __init__(self):
         self.rangematrix=np.zeros((16,1800))
-        self.index=np.zeros(28900)
+        self.index=np.zeros(28800)
         self.queueIndX=np.zeros(28800)
         self.queueIndY=np.zeros(28800)
         self.allPushedIndX=np.zeros(28800)#used to track points of a segmented object
@@ -185,6 +186,8 @@ class LEGO_cloudhandler():
             #pcd[i][3]=distance
             index=colID+rowID*1800
             #print(i)
+            if i >=28800:
+                continue
             self.index[i]=index
             #print(self.index)
         #pcd=np.insert(pcd,4,values=index,axis=1)
@@ -192,33 +195,28 @@ class LEGO_cloudhandler():
     
     def markground(self,pcd): #mark ground points
         #marker:0 no valid info, -1 initial value,after validation,not ground, 1 ground
-        for i in range(1799,-1,-1):
-            for j in range(5,-1,-1):#why 5: here we have 4 scans that are supposed to scan to the ground
+        for i in range(1800):
+            for j in range(4):#why 4: here we have 4 scans that are supposed to scan to the ground
                 lowerID=i+j*1800
                 upperID=i+(j+1)*1800
-                for m in range(28800):
-                    if self.index[m]==lowerID:
-                        low=m
-                        for n in range(m,28800):
-                            if self.index[n]==upperID:
-                                up=n
-                                if self.groundmetrix[low]==-1 or self.groundmetrix[up]==-1:
-                                    continue
-                                A=self.index[low]
-                                x1=A[0]
-                                y1=A[1]
-                                z1=A[2]
-                                B=self.index[up]
-                                x2=B[0]
-                                y2=B[1]
-                                z2=B[2]
-                                disx=x1-x2
-                                disy=y1-y2
-                                disz=z1-z2
-                                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi
-                                if abs(angle)<=10:
-                                    self.groundmetrix[up]=1
-                                    self.groundmetrix[low]=1
+                if self.rangematrix[j][i]<=0 or (self.rangematrix[j+1][i]<=0):
+                    self.groundmetrix[lowerID]=-1
+                    continue
+                x1=pcd[lowerID][0]
+                y1=pcd[lowerID][1]
+                z1=pcd[lowerID][2]
+                x2=pcd[upperID][0]
+                y2=pcd[upperID][1]
+                z2=pcd[upperID][2]                
+                disx=x1-x2               
+                disy=y1-y2                
+                disz=z1-z2               
+                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi               
+                if abs(angle)<=10:
+                    self.groundmetrix[upperID]=1
+                    self.groundmetrix[lowerID]=1
+                print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
+        #print(self.groundmetrix)
         return pcd,self.groundmetrix
     
     '''def labelcomponents(self,row,col):
