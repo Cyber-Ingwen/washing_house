@@ -46,8 +46,8 @@ class Node_PC(Node):
         
         self.loam.input(self.pcn)
         
-        #self.curv_pcn = self.Cul_Curv.process(self.pcn)
-        self.curv_pcn = self.loam.output(self.pcn)
+        self.curv_pcn = self.Cul_Curv.process(self.pcn)
+        #self.curv_pcn = self.loam.output(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd_curv)
@@ -58,7 +58,7 @@ class Node_PC(Node):
         self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
         self.vis.add_geometry(self.o3d_pcd)
         self.vis.add_geometry(self.o3d_pcd_curv)
-        #self.vis.run()
+        self.vis.run()
         self.vis.update_renderer()
         self.vis.poll_events()
     

@@ -103,22 +103,11 @@ class LidarOdometry():
         """牛顿高斯法优化"""
         x = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
         
-        for num in range(10):
-            print("____num____", num)
+        for num in range(20):
             f, j = self.matching(features, x)
-            
-            temp = np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e4 * np.eye(6))), j.T), f)
-            
-            print("____t____", temp.shape)
-            print("____f____", f.shape)
-            
-            #print("_^x^_", x, "f:", f)
-            #print("_^x^_", 1e5 / (np.dot(j, j)))
-            #x = x - (1e4 / (np.dot(j, j))) * f * j.T
-            x = (x.reshape(6,1) - np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e4 * np.eye(6))), j.T), f)).reshape(6)
-            
-            print("____x____", x)
+            x = (x.reshape(6,1) - np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e2 * np.eye(6))), j.T), f)).reshape(6)
             self.T = x
+            print("f:", f)
             
         self.T_list.append(x)
         
@@ -166,6 +155,8 @@ class LidarOdometry():
                         near_scan_index = nearest_index + delta + 1
                         temp = delta
                         break
+                    else:
+                        near_scan_index = nearest_index + delta + 1
                 else: 
                     if last_plane_points[nearest_index - delta - 1][3] == last_plane_points[nearest_index][3] :
                         near_scan_index = nearest_index - delta - 1
