@@ -38,7 +38,7 @@ class Node_PC(Node):
         self.pcn = pcd_as_numpy_array
         self.pcn = self.label(pcd_as_numpy_array)
         #self.pcn = self.Cul_Curv.process(self.pcn)
-        self.pcn=self.LEGO_cloudhandler.(self.pcn)
+        self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
@@ -54,7 +54,8 @@ class Node_PC(Node):
         
         if pcn.shape[0] == 28800:
             for i in range(pcn.shape[0]):
-                scan_mat[i] = (i % 16) if (i % 16) < 9 else 25 - (i % 16)
+                scan_mat[i] = (i % 16) if (i % 16) < 9 else 24 - (i % 16)
+                #print(scan_mat[i])
                 degree_mat[i] = i % 1800
         else:
             pass # 可改为计算
@@ -62,7 +63,6 @@ class Node_PC(Node):
         scan_mat = np.resize(scan_mat, (pcn.shape[0], 1))
         degree_mat = np.resize(degree_mat, (pcn.shape[0], 1))
         pcn = np.concatenate((pcn, scan_mat, degree_mat), axis = 1)
-        
         return pcn
 
     def read_points(self, cloud):
@@ -134,31 +134,38 @@ class Cul_Curvature():
 class LEGO_cloudhandler():
     def __init__(self):
         self.rangematrix=np.zeros((16,1800))
-        self.index=np.zeros(28800)
+        self.index=np.zeros(28900)
         self.queueIndX=np.zeros(28800)
         self.queueIndY=np.zeros(28800)
         self.allPushedIndX=np.zeros(28800)#used to track points of a segmented object
         self.allPushedIndY=np.zeros(28800)
-        self.lablematrix=np.np.zeros((16,1800))
+        self.lablematrix=np.zeros((16,1800))
         pass
 
-    def startendangle(self,pcd): #to find start and end angle of the clooud
-        a, b = pcb.shape
-        startOrientation=math.atan2(pcb[0][1],pcb[0][0])
-        endOrientation=math.atan2(pcb[a-1][1],pcb[a-1][0])+2*math.pi
+    '''def startendangle(self,pcd): #to find start and end angle of the clooud
+        a, b = pcd.shape
+        startOrientation=math.atan2(pcd[0][1],pcd[0][0])
+        endOrientation=math.atan2(pcd[a-1][1],pcd[a-1][0])+2*math.pi
         if endOrientation-startOrientation>3*math.pi:
             startOrientation+=2*math.pi
         elif endOrientation-startOrientation<math.pi:
             orientationDiff=endOrientation-startOrientation
-        return startOrientation,endOrientation,orientationDiff
+        return startOrientation,endOrientation,orientationDiff'''
     
-    def pointcloudproject(slef,pcd): #range image projection
+    def pointcloudproject(self,pcd): #range image projection
         num,dem=pcd.shape
         for i in range(num):
-            X=pcb[i][0]
-            Y=pcb[i][1]
-            Z=pcb[i][2]
-            #give row and column index for the point
+            X=pcd[i][0]
+            Y=pcd[i][1]
+            Z=pcd[i][2]
+            #add according to the new format
+            rowID=pcd[i][4]
+            colID=pcd[i][5]
+            rowID=int(rowID) #divide vertical angle resolution
+            colID=int(colID)
+            #print(colID)
+            #print(type(rowID))
+            '''#give row and column index for the point
             verticalAngle=atan2(Z,math.sqrt(X*X+Y*Y))*180/math.pi#find the angle btween p-o and plane x-y
             rowID=(verticalAngle-(-15))/2 #15 refers to bottom angle and 2 refers to vertical angle resolution
             if rowID<0 or rowID>16: # finish all the labels
@@ -168,18 +175,20 @@ class LEGO_cloudhandler():
             if colID>=1800:
                 colID=-1800
             if colID<0 or colID>=1800:
-                continue
+                continue'''
             distance=math.sqrt(X*X+Y*Y+Z*Z)
             if distance<1.0: #filter out point winthin 1 meter around the lidar
                 continue
             self.rangematrix[rowID][colID]=distance #put all the range in this array
-            pcd[i][3]=distance
+            #pcd[i][3]=distance
             index=colID+rowID*1800
+            print(i)
             self.index[i]=index
-        pcd=np.insert(pcd,4,values=index,axis=1)
+            print(self.index)
+        #pcd=np.insert(pcd,4,values=index,axis=1)
         return pcd
     
-    def markground(self,pcd): #mark ground points
+    '''def markground(self,pcd): #mark ground points
         #marker:0 no valid info, -1 initial value,after validation,not ground, 1 ground
         groundmetrix=np.zeros(28800)
         for i in range(1799,-1,-1):
@@ -300,7 +309,7 @@ class LEGO_cloudhandler():
         check_seg=False
         if allpushedindsize>=30: #check whether the cluster is valid
             check_seg=True
-        return check_seg
+        return check_seg'''
 
 
             
