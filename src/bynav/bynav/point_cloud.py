@@ -38,7 +38,8 @@ class Node_PC(Node):
         self.pcn = pcd_as_numpy_array
         self.pcn = self.label(pcd_as_numpy_array)
         #self.pcn = self.Cul_Curv.process(self.pcn)
-        self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
+        #self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
+        self.pcn=self.LEGO_cloudhandler.markground(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
@@ -140,6 +141,7 @@ class LEGO_cloudhandler():
         self.allPushedIndX=np.zeros(28800)#used to track points of a segmented object
         self.allPushedIndY=np.zeros(28800)
         self.lablematrix=np.zeros((16,1800))
+        self.groundmetrix=np.zeros(28800)
         pass
 
     '''def startendangle(self,pcd): #to find start and end angle of the clooud
@@ -188,39 +190,38 @@ class LEGO_cloudhandler():
         #pcd=np.insert(pcd,4,values=index,axis=1)
         return pcd
     
-    '''def markground(self,pcd): #mark ground points
+    def markground(self,pcd): #mark ground points
         #marker:0 no valid info, -1 initial value,after validation,not ground, 1 ground
-        groundmetrix=np.zeros(28800)
         for i in range(1799,-1,-1):
             for j in range(5,-1,-1):#why 5: here we have 4 scans that are supposed to scan to the ground
                 lowerID=i+j*1800
                 upperID=i+(j+1)*1800
-                for m in range(len(self.index)):
+                for m in range(28800):
                     if self.index[m]==lowerID:
                         low=m
-                        for n in range(m,len(self.index)):
+                        for n in range(m,28800):
                             if self.index[n]==upperID:
                                 up=n
-                if groundmetrix[m]==-1 or groundmetrix[n]==-1:
-                    continue
-                A=self.index[low]
-                x1=A[0]
-                y1=A[1]
-                z1=A[2]
-                B=self.index[up]
-                x2=B[0]
-                y2=B[1]
-                z2=B[2]
-                disx=x1-x2
-                disy=y1-y2
-                disz=z1-z2
-                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi
-                if abs(angle)<=10:
-                    groundmetrix[up]=1
-                    groundmetrix[low]=1
-        return groundmetrix
+                                if self.groundmetrix[low]==-1 or self.groundmetrix[up]==-1:
+                                    continue
+                                A=self.index[low]
+                                x1=A[0]
+                                y1=A[1]
+                                z1=A[2]
+                                B=self.index[up]
+                                x2=B[0]
+                                y2=B[1]
+                                z2=B[2]
+                                disx=x1-x2
+                                disy=y1-y2
+                                disz=z1-z2
+                                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi
+                                if abs(angle)<=10:
+                                    self.groundmetrix[up]=1
+                                    self.groundmetrix[low]=1
+        return pcd,self.groundmetrix
     
-    def labelcomponents(self,row,col):
+    '''def labelcomponents(self,row,col):
         labelcount=1
         self.queueIndX[0]=row
         self.queueIndY[0]=col
