@@ -46,7 +46,8 @@ class Node_PC(Node):
         
         self.loam.input(self.pcn)
         
-        self.curv_pcn = self.Cul_Curv.process(self.pcn)
+        #self.curv_pcn = self.Cul_Curv.process(self.pcn)
+        self.curv_pcn = self.loam.output(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd_curv)
