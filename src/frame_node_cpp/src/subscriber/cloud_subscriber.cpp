@@ -1,11 +1,12 @@
-#include <iostream>
-#include <string>
-
 #include "subscriber/cloud_subscriber.hpp"
+
 // #include "glog/logging.h"
 
 CloudSubscriber::CloudSubscriber(std::string name, std::string topic_name) : Node(name)
 {
+    viz_name = "pcl cloud";
+    visualizer = boost::make_shared<CloudVisualizer>(viz_name);
+
     subscriber_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 10, std::bind(&CloudSubscriber::msg_callback, this, std::placeholders::_1));
 }
 
@@ -13,8 +14,10 @@ void CloudSubscriber::msg_callback(const sensor_msgs::msg::PointCloud2::SharedPt
 {
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     CloudSubscriber::fromROSMsg(*msg_ptr, *cloud);
-    RCLCPP_INFO(this->get_logger(), "succuse!");
+    // RCLCPP_INFO(this->get_logger(), "succuse!");
 
+    visualizer->VisualUpdate(cloud, viz_name);
+    RCLCPP_INFO(this->get_logger(), "succuse!");
 };
 
 template<typename T>

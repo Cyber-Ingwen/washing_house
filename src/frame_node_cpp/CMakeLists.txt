@@ -13,7 +13,8 @@ ament_auto_find_build_dependencies ()
 
 ament_auto_add_executable (frame_node
     src/frame_node.cpp 
-    src/subscriber/cloud_subscriber.cpp)
+    src/subscriber/cloud_subscriber.cpp
+    src/apps/pcl_viz.cpp)
 
 target_link_libraries(frame_node ${PCL_LIBRARIES})
 
