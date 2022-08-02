@@ -29,7 +29,6 @@ class FeatureExtraction():
         self.features = []
     
     def process(self, pcn):
-        print("__:", pcn.shape)
         self.processed_pcn = []
         self.edge_points = []
         self.plane_points = []
@@ -74,8 +73,6 @@ class FeatureExtraction():
         self.plane_points = np.array(self.plane_points)
         self.features = [self.edge_points, self.plane_points]
         
-        print("__:", self.edge_points.shape)
-        
         return 1
 
 
@@ -113,11 +110,10 @@ class LidarOdometry():
         """特征点匹配"""
         [edge_points, plane_points] = features
         [last_edge_points, last_plane_points] = self.last_features
-        
-        print("________:", edge_points.shape)
         edge_points = self.transform(edge_points, T)
+        plane_points = self.transform(plane_points, T)
         
-        print("________:", edge_points.shape)
+        print("___ep_____:", edge_points.shape)
         
         """边缘点匹配"""
         for i in range(edge_points.shape[0]):
@@ -184,8 +180,8 @@ class LidarOdometry():
     def transform(self, x, T):
         R = self._get_R(T)
         t = self._get_t(T)
-        
-        for i in range(x.shape[0]):
-            x[i] = np.matmul(R, x[i]) + t
+        x_vect, x_label = x[:,:3], x[:,3:]
+        x_vect = np.einsum("ij,nj->ni", R, x_vect) + t
+        x = np.concatenate((x_vect, x_label), axis=1)
         
         return x
