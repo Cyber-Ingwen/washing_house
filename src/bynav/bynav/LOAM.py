@@ -101,11 +101,11 @@ class LidarOdometry():
 
     def NewtonGussian(self, features):
         """牛顿高斯法优化"""
-        x = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+        x = np.array([0.1, 0.1, 0.1, 1, 1, 1])
         
-        for num in range(20):
+        for num in range(100):
             f, j = self.matching(features, x)
-            x = (x.reshape(6,1) - np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e2 * np.eye(6))), j.T), f)).reshape(6)
+            x = (x.reshape(6,1) - 8e3 * np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e2 * np.eye(6))), j.T), f)).reshape(6)
             self.T = x
             print("f:", f)
             
