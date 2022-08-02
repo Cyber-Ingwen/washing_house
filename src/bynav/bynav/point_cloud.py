@@ -182,9 +182,9 @@ class LEGO_cloudhandler():
             self.rangematrix[rowID][colID]=distance #put all the range in this array
             #pcd[i][3]=distance
             index=colID+rowID*1800
-            print(i)
+            #print(i)
             self.index[i]=index
-            print(self.index)
+            #print(self.index)
         #pcd=np.insert(pcd,4,values=index,axis=1)
         return pcd
     
