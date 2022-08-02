@@ -119,6 +119,7 @@ class LEGO_cloudhandler():
         self.queueIndY=np.zeros(28800)
         self.allPushedIndX=np.zeros(28800)#used to track points of a segmented object
         self.allPushedIndY=np.zeros(28800)
+        self.lablematrix=np.np.zeros((16,1800))
         pass
 
     def startendangle(self,pcd): #to find start and end angle of the clooud
@@ -191,15 +192,81 @@ class LEGO_cloudhandler():
         return groundmetrix
     
     def labelcomponents(self,row,col):
+        labelcount=1
         self.queueIndX[0]=row
         self.queueIndY[0]=col
         self.allPushedIndX[0]=row
         self.allPushedIndY[0]=col
+        list_compare=[0,0]
+        angle_hor=0.2/180*math.pi
+        angle_ver=2/180*math.pi
+        angle_bon=60/180*math.pi
         queuesize=1
         queuestartInd=0
         queueendInd=1
         allpushedindsize=1
-        while(queuesize>0):#
+        while(queuesize>0):#use BFS to find the neighbor point
+            findpointIDX=queueIndX[queuestartInd] #find a point 
+            findpointIDY=queueIndY[queueendInd]
+            queuesize=queuesize-1
+            queuestartInd=queuestartInd+1
+            self.labelcount[findpointIDX][findpointIDY]=labelcount #mark the poind we are going to search
+            if findpointIDX+1 <0 or findpointIDX-1<0 or findpointIDX+1>16 or findpointIDX-1>16: #index should be within the boundary
+                continue
+            if findpointIDY+1>=1800:
+                findpointIDY=0
+            if findpointIDY-1<0:
+                findpointIDY-1=1799
+            if self.lablematrix[findpointIDX-1][findpointIDY]!=0:#check whether it has been coverd
+                continue
+            list_compare[0]=self.rangematrix[findpointIDX][findpointIDY] #this is the range between findpoint and lidar
+            dis_left=self.rangematrix[findpointIDX-1][findpointIDY] #use col and row id to find the range from the left point to the lidar
+            list_compare[1]=dis_left
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_hor),(d1-d2*cos(angle_hor)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX-1
+                queueIndX[queueendInd]=findpointIDY
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.labelcount[findpointIDX-1][findpointIDY]=labelcount
+            dis_right=self.rangematrix[findpointIDX+1][findpointIDY] #right point
+            list_compare[1]=dis_right
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_hor),(d1-d2*cos(angle_hor)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX+1
+                queueIndX[queueendInd]=findpointIDY
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.labelcount[findpointIDX+1][findpointIDY]=labelcount
+            dis_up=self.rangematrix[findpointIDX][findpointIDY+1]#uppper point
+            list_compare[1]=dis_up
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_ver),(d1-d2*cos(angle_ver)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX
+                queueIndX[queueendInd]=findpointIDY+1
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.labelcount[findpointIDX][findpointIDY+1]=labelcount
+            dis_low=self.rangematrix[findpointIDX][findpointIDY-1]#lower point
+            list_compare[1]=dis_low
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_ver),(d1-d2*cos(angle_ver)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX
+                queueIndX[queueendInd]=findpointIDY-1
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.labelcount[findpointIDX][findpointIDY-1]=labelcount
+            
+            
+            
 
 
         
