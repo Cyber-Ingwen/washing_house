@@ -113,8 +113,6 @@ class LidarOdometry():
             s = np.linalg.norm(np.cross(last_points[nearest_index] - edge_point, last_points[nearest_index - 1 if nearest_index - 1 >= 0 else nearest_index + 1] - edge_point))
             h = (s / d) if d != 0 else -1
 
-            #print("\r h = %s " % (h), end = "")
-
         """平面点匹配"""
         for i in range(plane_points.shape[0]):
             plane_point = np.array(plane_points[i][:3])
