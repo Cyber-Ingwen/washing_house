@@ -39,7 +39,7 @@ class Node_PC(Node):
         self.pcn = self.label(pcd_as_numpy_array)
         #self.pcn = self.Cul_Curv.process(self.pcn)
         self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
-        self.pcn=self.LEGO_cloudhandler.markground(self.pcn)
+        self.pcn,self.ground=self.LEGO_cloudhandler.markground(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
@@ -199,9 +199,12 @@ class LEGO_cloudhandler():
             for j in range(4):#why 4: here we have 4 scans that are supposed to scan to the ground
                 lowerID=i+j*1800
                 upperID=i+(j+1)*1800
-                if self.rangematrix[j][i]<=0 or (self.rangematrix[j+1][i]<=0):
+                #print(lowerID,upperID)
+                '''if self.rangematrix[j][i]<=0 or self.rangematrix[j+1][i]<=0:
                     self.groundmetrix[lowerID]=-1
                     continue
+                else:
+                    print(lowerID)'''
                 x1=pcd[lowerID][0]
                 y1=pcd[lowerID][1]
                 z1=pcd[lowerID][2]
@@ -210,13 +213,13 @@ class LEGO_cloudhandler():
                 z2=pcd[upperID][2]                
                 disx=x1-x2               
                 disy=y1-y2                
-                disz=z1-z2               
-                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi               
+                disz=z1-z2     
+                angle=math.atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi               
                 if abs(angle)<=10:
                     self.groundmetrix[upperID]=1
                     self.groundmetrix[lowerID]=1
                 print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
-        #print(self.groundmetrix)
+        print(self.groundmetrix)
         return pcd,self.groundmetrix
     
     '''def labelcomponents(self,row,col):
