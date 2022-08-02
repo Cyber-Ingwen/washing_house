@@ -36,7 +36,9 @@ class Node_PC(Node):
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
         self.pcn = pcd_as_numpy_array
-        self.pcn = self.Cul_Curv.process(self.pcn)
+        self.pcn = self.label(pcd_as_numpy_array)
+        #self.pcn = self.Cul_Curv.process(self.pcn)
+        self.pcn=self.LEGO_cloudhandler.(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
@@ -44,6 +46,24 @@ class Node_PC(Node):
         self.vis.add_geometry(self.o3d_pcd)
         self.vis.poll_events()
         self.vis.update_renderer()
+
+    def label(self, pcn):
+        """给点云标注角度和线"""
+        scan_mat = np.zeros(pcn.shape[0])
+        degree_mat = np.zeros(pcn.shape[0])
+        
+        if pcn.shape[0] == 28800:
+            for i in range(pcn.shape[0]):
+                scan_mat[i] = (i % 16) if (i % 16) < 9 else 25 - (i % 16)
+                degree_mat[i] = i % 1800
+        else:
+            pass # 可改为计算
+            
+        scan_mat = np.resize(scan_mat, (pcn.shape[0], 1))
+        degree_mat = np.resize(degree_mat, (pcn.shape[0], 1))
+        pcn = np.concatenate((pcn, scan_mat, degree_mat), axis = 1)
+        
+        return pcn
 
     def read_points(self, cloud):
         """读取点云数据"""
@@ -167,10 +187,10 @@ class LEGO_cloudhandler():
                 lowerID=i+j*1800
                 upperID=i+(j+1)*1800
                 for m in range(len(self.index)):
-                    if self.index[m]=lowerID:
+                    if self.index[m]==lowerID:
                         low=m
                         for n in range(m,len(self.index)):
-                            if self.index[n]=upperID:
+                            if self.index[n]==upperID:
                                 up=n
                 if groundmetrix[m]==-1 or groundmetrix[n]==-1:
                     continue
@@ -185,7 +205,7 @@ class LEGO_cloudhandler():
                 disx=x1-x2
                 disy=y1-y2
                 disz=z1-z2
-                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*/math.pi
+                angle=atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi
                 if abs(angle)<=10:
                     groundmetrix[up]=1
                     groundmetrix[low]=1
@@ -216,7 +236,7 @@ class LEGO_cloudhandler():
             if findpointIDY+1>=1800:
                 findpointIDY=0
             if findpointIDY-1<0:
-                findpointIDY-1=1799
+                findpointIDY=1800
             if self.lablematrix[findpointIDX-1][findpointIDY]!=0:#check whether it has been coverd
                 continue
             list_compare[0]=self.rangematrix[findpointIDX][findpointIDY] #this is the range between findpoint and lidar
@@ -288,7 +308,7 @@ class LEGO_cloudhandler():
 
         
 
-    def cloudsegmentation(self,pcd,groundmetrix):#point cloud segmentation,to remove clusters with few points
+    #def cloudsegmentation(self,pcd,groundmetrix):#point cloud segmentation,to remove clusters with few points
 
 
                     
