@@ -231,6 +231,9 @@ class LEGO_cloudhandler():
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
                 self.labelcount[findpointIDX-1][findpointIDY]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX-1
+                allPushedIndY[allpushedindsize]=findpointIDY
+                allpushedindsize=allpushedindsize+1
             dis_right=self.rangematrix[findpointIDX+1][findpointIDY] #right point
             list_compare[1]=dis_right
             d1=max(list_compare)
@@ -242,6 +245,9 @@ class LEGO_cloudhandler():
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
                 self.labelcount[findpointIDX+1][findpointIDY]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX+1
+                allPushedIndY[allpushedindsize]=findpointIDY
+                allpushedindsize=allpushedindsize+1
             dis_up=self.rangematrix[findpointIDX][findpointIDY+1]#uppper point
             list_compare[1]=dis_up
             d1=max(list_compare)
@@ -253,6 +259,9 @@ class LEGO_cloudhandler():
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
                 self.labelcount[findpointIDX][findpointIDY+1]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX
+                allPushedIndY[allpushedindsize]=findpointIDY+1
+                allpushedindsize=allpushedindsize+1
             dis_low=self.rangematrix[findpointIDX][findpointIDY-1]#lower point
             list_compare[1]=dis_low
             d1=max(list_compare)
@@ -264,8 +273,16 @@ class LEGO_cloudhandler():
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
                 self.labelcount[findpointIDX][findpointIDY-1]=labelcount
-            
-            
+                allPushedIndX[allpushedindsize]=findpointIDX
+                allPushedIndY[allpushedindsize]=findpointIDY-1
+                allpushedindsize=allpushedindsize+1
+        
+        check_seg=False
+        if allpushedindsize>=30: #check whether the cluster is valid
+            check_seg=True
+        return check_seg
+
+
             
 
 
