@@ -143,6 +143,7 @@ class LEGO_cloudhandler():
         self.allPushedIndY=np.zeros(28800)
         self.lablematrix=np.zeros((16,1800))
         self.groundmetrix=np.zeros(28800)
+        self.groundpoint=[]
         pass
 
     '''def startendangle(self,pcd): #to find start and end angle of the clooud
@@ -218,9 +219,10 @@ class LEGO_cloudhandler():
                 if abs(angle)<=10:
                     self.groundmetrix[upperID]=1
                     self.groundmetrix[lowerID]=1
-                print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
-        print(self.groundmetrix)
-        return pcd,self.groundmetrix
+                self.groundpoint.append(lowerID)
+                #print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
+        #print(self.groundmetrix)
+        return pcd,self.groundpoint
     
     '''def labelcomponents(self,row,col):
         labelcount=1
