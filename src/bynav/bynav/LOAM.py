@@ -89,6 +89,9 @@ class LidarOdometry():
         self.T_list = []
         self.T = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
         
+        self.flag = 0
+        self.var = []
+        
     def process(self, features):
         """主程序"""
         if self.init_flag == 0:
@@ -103,11 +106,14 @@ class LidarOdometry():
         """牛顿高斯法优化"""
         x = np.array([0.1, 0.1, 0.1, 1, 1, 1])
         
-        for num in range(100):
+        print("___________")
+        for num in range(10):
             f, j = self.matching(features, x)
-            x = (x.reshape(6,1) - 8e3 * np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e2 * np.eye(6))), j.T), f)).reshape(6)
+            x = (x.reshape(6,1) - np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e-2 * np.eye(6))), j.T), f)).reshape(6)
             self.T = x
-            print("f:", f)
+            print("\r x = %s ,f = %s" % (x.reshape(6), np.linalg.norm(f)), end = "")
+            if np.linalg.norm(f)<10:
+                break
             
         self.T_list.append(x)
         
@@ -118,26 +124,35 @@ class LidarOdometry():
         [edge_points, plane_points] = features
         [last_edge_points, last_plane_points] = self.last_features
         
+        raw_edge_points = edge_points
+        raw_plane_points = plane_points
         edge_points = self.transform(edge_points, T)
         plane_points = self.transform(plane_points, T)
         
-        D1, D2, j1, j2 = 0, 0, np.zeros(6), np.zeros(6)
+        n = edge_points.shape[0]
+        n = edge_points.shape[0] + plane_points.shape[0]
+        F, J = np.zeros(n),  np.zeros((n, 6))
         
         """边缘点匹配"""
         for i in range(edge_points.shape[0]):
             edge_point = np.array(edge_points[i][:3])
             last_points = np.array(last_edge_points[:,:3])
             
-            distance = np.linalg.norm(last_points - edge_point, axis = 1)
-            nearest_index = np.argmax(-distance)
-            near_angle_index = (nearest_index - 1) if (nearest_index - 1) >= 0 else (nearest_index + 1)
+            if self.flag == 0:
+                distance = np.linalg.norm(last_points - edge_point, axis = 1)
+                nearest_index = np.argmax(-distance)
+                near_angle_index = (nearest_index - 1) if (nearest_index - 1) >= 0 else (nearest_index + 1)
+                
+                self.var = [nearest_index, near_angle_index]
+                self.flag = 0
             
+            [nearest_index, near_angle_index] = self.var
             d = np.linalg.norm(last_points[nearest_index] - last_points[near_angle_index])
             s = np.linalg.norm(np.cross(last_points[nearest_index] - edge_point, last_points[near_angle_index] - edge_point))
             h = (s / d)
             
-            j1 += self._get_jacobi_edge(edge_point, last_points[nearest_index], last_points[near_angle_index], T)
-            D1 += h
+            J[i] = self._get_jacobi_edge(raw_edge_points[i][:3], last_points[nearest_index], last_points[near_angle_index], T)
+            F[i] = h
         
         """平面点匹配"""
         for i in range(plane_points.shape[0]):
@@ -147,13 +162,11 @@ class LidarOdometry():
             nearest_index = np.argmax(-distance)
             
             near_angle_index = (nearest_index - 1) if (nearest_index - 1) >= 0 else (nearest_index + 1)
-            
-            temp = 0
+        
             for delta in range(32):
                 if nearest_index + delta + 1 < last_plane_points.shape[0]:
                     if last_plane_points[nearest_index + delta + 1][3] == last_plane_points[nearest_index][3] :
                         near_scan_index = nearest_index + delta + 1
-                        temp = delta
                         break
                     else:
                         near_scan_index = nearest_index + delta + 1
@@ -164,16 +177,17 @@ class LidarOdometry():
 
             s = (np.cross(last_points[nearest_index] - last_points[near_angle_index], last_points[nearest_index] - last_points[near_scan_index]))
             h = np.dot(last_points[nearest_index] - plane_point, s / np.linalg.norm(s))
-            if not math.isnan(h): 
-                j2 += self._get_jacobi_plane(edge_point, last_points[nearest_index], last_points[near_angle_index], last_points[near_scan_index], T)
-                D2 += h
-
-        j1 = j1 / edge_points.shape[0]
-        D1 = D1 / edge_points.shape[0]
-        j2 = j2 / plane_points.shape[0]
-        D2 = D2 / plane_points.shape[0]
-        
-        return np.array([[D1, D2]]).reshape((2, 1)), (np.vstack((j1, j2))).reshape((2, 6))
+            
+            if math.isnan(h): h = 0
+            if not math.isnan(h):
+                J[i + edge_points.shape[0]] = 1 * self._get_jacobi_plane(raw_plane_points[i][:3], last_points[nearest_index], last_points[near_angle_index], last_points[near_scan_index], T)
+                F[i + edge_points.shape[0]] = 1 * h 
+            else:
+                J[i + edge_points.shape[0]] = self._get_jacobi_plane(raw_plane_points[i][:3], last_points[nearest_index], last_points[near_angle_index], last_points[near_scan_index], T)
+                F[i + edge_points.shape[0]] = h
+                print("h==Nan")
+            
+        return F.reshape((n, 1)), J.reshape((n, 6))
         
     def _get_jacobi_edge(self, p1, p2, p3, T):
         [x_1, y_1, z_1], [x_2, y_2, z_2], [x_3, y_3, z_3] = p1, p2, p3
@@ -187,7 +201,7 @@ class LidarOdometry():
         j16 = (-2*x_2 + 2*x_3)*((x + x_1*np.cos(beta)*np.cos(gamma) - x_2 - y_1*np.sin(gamma)*np.cos(beta) + z_1*np.sin(beta))*(x_1*(np.sin(alpha)*np.sin(gamma) - np.sin(beta)*np.cos(alpha)*np.cos(gamma)) + y_1*(np.sin(alpha)*np.cos(gamma) + np.sin(beta)*np.sin(gamma)*np.cos(alpha)) + z + z_1*np.cos(alpha)*np.cos(beta) - z_3) - (x + x_1*np.cos(beta)*np.cos(gamma) - x_3 - y_1*np.sin(gamma)*np.cos(beta) + z_1*np.sin(beta))*(x_1*(np.sin(alpha)*np.sin(gamma) - np.sin(beta)*np.cos(alpha)*np.cos(gamma)) + y_1*(np.sin(alpha)*np.cos(gamma) + np.sin(beta)*np.sin(gamma)*np.cos(alpha)) + z + z_1*np.cos(alpha)*np.cos(beta) - z_2)) + (2*y_2 - 2*y_3)*((x_1*(np.sin(alpha)*np.sin(gamma) - np.sin(beta)*np.cos(alpha)*np.cos(gamma)) + y_1*(np.sin(alpha)*np.cos(gamma) + np.sin(beta)*np.sin(gamma)*np.cos(alpha)) + z + z_1*np.cos(alpha)*np.cos(beta) - z_2)*(x_1*(np.sin(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(gamma)*np.cos(alpha)) + y + y_1*(-np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)) - y_3 - z_1*np.sin(alpha)*np.cos(beta)) - (x_1*(np.sin(alpha)*np.sin(gamma) - np.sin(beta)*np.cos(alpha)*np.cos(gamma)) + y_1*(np.sin(alpha)*np.cos(gamma) + np.sin(beta)*np.sin(gamma)*np.cos(alpha)) + z + z_1*np.cos(alpha)*np.cos(beta) - z_3)*(x_1*(np.sin(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(gamma)*np.cos(alpha)) + y + y_1*(-np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)) - y_2 - z_1*np.sin(alpha)*np.cos(beta)))
         
         j = np.array([j11, j12, j13, j14, j15, j16])
-        j = j / (-x_2 + x_3)**2 + (-y_2 + y_3)**2 + (-z_2 + z_3)**2
+        j = j / ((-x_2 + x_3)**2 + (-y_2 + y_3)**2 + (-z_2 + z_3)**2)
 
         return j
     
@@ -203,7 +217,7 @@ class LidarOdometry():
         j26 = (-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3)
         
         j = np.array([j21, j22, j23, j24, j25, j26])
-        j = j / ((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3))**2 + (-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3))**2 + ((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3))**2
+        j = j / np.sqrt(((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3))**2 + (-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3))**2 + ((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3))**2)
 
         return j
         
@@ -231,3 +245,4 @@ class LidarOdometry():
         x = np.concatenate((x_vect, x_label), axis=1)
         
         return x
+
