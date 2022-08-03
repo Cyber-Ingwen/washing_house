@@ -45,7 +45,7 @@ class Cul_Curvature():
                 if(curv < 100) & (curv > 0.2):
                     list.append([x, y, z, curv])
                     #print("\r curv = %s " % (curv), end = "")
-                elif(curv < 0.1) & (curv > 0):
+                elif(curv < 2e-5) & (curv > 0):
                     list2.append([x, y, z, curv])
                     #print("\r curv = %s " % (curv), end = "")
             
@@ -55,7 +55,7 @@ class Cul_Curvature():
         self.edge_points = list[:,:3]
         self.plane_points = list2[:,:3]
 
-        return list
+        return list2
 
     def process2(self, pcn):
         a, b = pcn.shape
