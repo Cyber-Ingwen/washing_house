@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from math import *
+import time
 
 
 class LOAM():
@@ -10,15 +11,17 @@ class LOAM():
     def __init__(self):
         self.feature_extraction = FeatureExtraction()
         self.lidar_odometry = LidarOdometry()
-        self.init_flag = 0
 
     def input(self, data):
+        t0 = time.time()
         self.feature_extraction.process(data)
         self.lidar_odometry.process(self.feature_extraction.features)
+        print("T:", time.time()-t0)
     
     def output(self, pcn):
         pcn = pcn[:,:3]
         pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T)
+        #pcn = self.feature_extraction.ground_point
         
         return pcn
 
@@ -31,6 +34,7 @@ class FeatureExtraction():
         self.edge_points = []
         self.plane_points = []
         self.features = []
+        self.LEGO_cloudhandler = LEGO_cloudhandler()
     
     def process(self, pcn):
         self.processed_pcn = []
@@ -38,8 +42,8 @@ class FeatureExtraction():
         self.plane_points = []
 
         """分割地面点"""
-        pcn=LEGO_cloudhandler.pointcloudproject(pcn)
-        pcn,self.ground_point_index = LEGO_cloudhandler.markground(pcn)
+        pcn = self.LEGO_cloudhandler.pointcloudproject(pcn)
+        pcn,self.ground_point_index = self.LEGO_cloudhandler.markground(pcn)
         self.ground_point = pcn[self.ground_point_index, :]
 
         """分割地面点"""
@@ -110,9 +114,9 @@ class LidarOdometry():
         x = np.array([0.1, 0.1, 0.1, 1, 1, 1])
         
         print("___________")
-        for num in range(10):
+        for num in range(3):
             f, j = self.matching(features, x)
-            x = (x.reshape(6,1) - np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e-2 * np.eye(6))), j.T), f)).reshape(6)
+            x = (x.reshape(6,1) - 3 * np.matmul(np.matmul(np.array(np.linalg.inv(np.matmul(j.T, j) + 1e-2 * np.eye(6))), j.T), f)).reshape(6)
             self.T = x
             print("\r x = %s ,f = %s" % (x.reshape(6), np.linalg.norm(f)), end = "")
             if np.linalg.norm(f)<10:
@@ -271,8 +275,8 @@ class LEGO_cloudhandler():
             Y=pcd[i][1]
             Z=pcd[i][2]
             #add according to the new format
-            rowID=pcd[i][4]
-            colID=pcd[i][5]
+            rowID=pcd[i][3]
+            colID=pcd[i][4]
             rowID=int(rowID) #divide vertical angle resolution
             colID=int(colID)
             #print(colID)
@@ -295,8 +299,8 @@ class LEGO_cloudhandler():
         #marker:0 no valid info, -1 initial value,after validation,not ground, 1 ground
         for i in range(1800):
             for j in range(4):#why 4: here we have 4 scans that are supposed to scan to the ground
-                lowerID=i+j*1800
-                upperID=i+(j+1)*1800
+                lowerID = i * 16 + j
+                upperID = i * 16 + (j+1)
                 #print(lowerID,upperID)
                 x1=pcd[lowerID][0]
                 y1=pcd[lowerID][1]
@@ -314,7 +318,7 @@ class LEGO_cloudhandler():
                     self.groundpoint.append(lowerID)
                 #print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
         #print(self.groundmetrix)
-        return pcd,self.groundpoint
+        return pcd, self.groundpoint
     
     def labelcomponents(self,row,col):
         labelcount=1
