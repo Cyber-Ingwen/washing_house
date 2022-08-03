@@ -3,5 +3,9 @@
         "/home/cidi/rslidar/install/rslidar_msg/lib/python3.8/site-packages",
         "/opt/ros/galactic/lib/python3.8/site-packages"
     ],
-    "ros.distro": "galactic"
+    "ros.distro": "galactic",
+    "python.analysis.extraPaths": [
+        "/home/cidi/rslidar/install/rslidar_msg/lib/python3.8/site-packages",
+        "/opt/ros/galactic/lib/python3.8/site-packages"
+    ]
 }

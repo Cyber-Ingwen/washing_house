@@ -6,8 +6,13 @@
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<CloudSubscriber>("cloud_sub","/kitti/velo/pointcloud");
-    rclcpp::spin(node);
+    rclcpp::executors::SingleThreadedExecutor exec;
+
+    auto node1 = std::make_shared<CloudSubscriber>("cloud_sub","/kitti/velo/pointcloud");
+
+    exec.add_node(node1);
+    
+    exec.spin();
     rclcpp::shutdown();
     return 0;
 }
