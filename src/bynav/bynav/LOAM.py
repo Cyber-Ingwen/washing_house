@@ -21,6 +21,191 @@ class LOAM():
         
         return pcn
 
+class LEGO_cloudhandler():
+    def __init__(self):
+        self.rangematrix=np.zeros((16,1800))
+        self.index=np.zeros(28800)
+        self.queueIndX=np.zeros(28800)
+        self.queueIndY=np.zeros(28800)
+        self.allPushedIndX=np.zeros(28800)#used to track points of a segmented object
+        self.allPushedIndY=np.zeros(28800)
+        self.lablematrix=np.zeros((16,1800))
+        self.groundmetrix=np.zeros(28800)
+        self.groundpoint=[]
+        self.startindex=np.zeros(16)
+        pass
+    
+    def pointcloudproject(self,pcd): #range image projection
+        num,dem=pcd.shape
+        for i in range(num):
+            X=pcd[i][0]
+            Y=pcd[i][1]
+            Z=pcd[i][2]
+            #add according to the new format
+            rowID=pcd[i][4]
+            colID=pcd[i][5]
+            rowID=int(rowID) #divide vertical angle resolution
+            colID=int(colID)
+            #print(colID)
+            #print(type(rowID))
+            distance=math.sqrt(X*X+Y*Y+Z*Z)
+            if distance<1.0: #filter out point winthin 1 meter around the lidar
+                continue
+            self.rangematrix[rowID][colID]=distance #put all the range in this array
+            #pcd[i][3]=distance
+            index=colID+rowID*1800
+            #print(i)
+            if i >=28800:
+                continue
+            self.index[i]=index
+            #print(self.index)
+        #pcd=np.insert(pcd,4,values=index,axis=1)
+        return pcd
+    
+    def markground(self,pcd): #mark ground points
+        #marker:0 no valid info, -1 initial value,after validation,not ground, 1 ground
+        for i in range(1800):
+            for j in range(4):#why 4: here we have 4 scans that are supposed to scan to the ground
+                lowerID=i+j*1800
+                upperID=i+(j+1)*1800
+                #print(lowerID,upperID)
+                x1=pcd[lowerID][0]
+                y1=pcd[lowerID][1]
+                z1=pcd[lowerID][2]
+                x2=pcd[upperID][0]
+                y2=pcd[upperID][1]
+                z2=pcd[upperID][2]                
+                disx=x1-x2               
+                disy=y1-y2                
+                disz=z1-z2     
+                angle=math.atan2(disz,math.sqrt(disx*disx+disy*disy))*180/math.pi               
+                if abs(angle)<=10:
+                    self.groundmetrix[upperID]=1
+                    self.groundmetrix[lowerID]=1
+                    self.groundpoint.append(lowerID)
+                #print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
+        #print(self.groundmetrix)
+        return pcd,self.groundpoint
+    
+    def labelcomponents(self,row,col):
+        labelcount=1
+        self.queueIndX[0]=row
+        self.queueIndY[0]=col
+        self.allPushedIndX[0]=row
+        self.allPushedIndY[0]=col
+        list_compare=[0,0]
+        angle_hor=0.2/180*math.pi
+        angle_ver=2/180*math.pi
+        angle_bon=60/180*math.pi
+        queuesize=1
+        queuestartInd=0
+        queueendInd=1
+        allpushedindsize=1
+        while(queuesize>0):#use BFS to find the neighbor point
+            findpointIDX=self.queueIndX[queuestartInd] #find a point 
+            findpointIDY=self.queueIndY[queueendInd]
+            findpointIDX=int(findpointIDX)
+            findpointIDY=int(findpointIDY)
+            queuesize=queuesize-1
+            queuestartInd=queuestartInd+1
+            self.lablematrix[findpointIDX][findpointIDY]=labelcount #mark the poind we are going to search
+            if findpointIDX+1 <0 or findpointIDX-1<0 or findpointIDX+1>16 or findpointIDX-1>16: #index should be within the boundary
+                continue
+            if self.lablematrix[findpointIDX-1][findpointIDY]!=0:#check whether it has been coverd
+                continue
+            if self.lablematrix[findpointIDX+1][findpointIDY]!=0:#check whether it has been coverd
+                continue
+            if findpointIDY+1>=1800:
+                findpointIDY=0
+            if self.lablematrix[findpointIDX][findpointIDY+1]!=0:#check whether it has been coverd
+                continue
+            if findpointIDY-1<0:
+                findpointIDY=1800
+            if self.lablematrix[findpointIDX][findpointIDY-1]!=0:#check whether it has been coverd
+                continue
+            list_compare[0]=self.rangematrix[findpointIDX][findpointIDY] #this is the range between findpoint and lidar
+            dis_left=self.rangematrix[findpointIDX-1][findpointIDY] #use col and row id to find the range from the left point to the lidar
+            list_compare[1]=dis_left
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_hor),(d1-d2*cos(angle_hor)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX-1
+                queueIndX[queueendInd]=findpointIDY
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.lablematrix[findpointIDX-1][findpointIDY]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX-1
+                allPushedIndY[allpushedindsize]=findpointIDY
+                allpushedindsize=allpushedindsize+1
+            dis_right=self.rangematrix[findpointIDX+1][findpointIDY] #right point
+            list_compare[1]=dis_right
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_hor),(d1-d2*cos(angle_hor)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX+1
+                queueIndX[queueendInd]=findpointIDY
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.lablematrix[findpointIDX+1][findpointIDY]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX+1
+                allPushedIndY[allpushedindsize]=findpointIDY
+                allpushedindsize=allpushedindsize+1
+            dis_up=self.rangematrix[findpointIDX][findpointIDY+1]#uppper point
+            list_compare[1]=dis_up
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_ver),(d1-d2*cos(angle_ver)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX
+                queueIndX[queueendInd]=findpointIDY+1
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.lablematrix[findpointIDX][findpointIDY+1]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX
+                allPushedIndY[allpushedindsize]=findpointIDY+1
+                allpushedindsize=allpushedindsize+1
+            dis_low=self.rangematrix[findpointIDX][findpointIDY-1]#lower point
+            list_compare[1]=dis_low
+            d1=max(list_compare)
+            d2=min(list_compare)
+            angel=atan2(d2*sin(angle_ver),(d1-d2*cos(angle_ver)))
+            if angle>angle_bon:
+                queueIndX[queueendInd]=findpointIDX
+                queueIndX[queueendInd]=findpointIDY-1
+                queuesize=queuesize+1
+                queueendInd=queueendInd+1
+                self.lablematrix[findpointIDX][findpointIDY-1]=labelcount
+                allPushedIndX[allpushedindsize]=findpointIDX
+                allPushedIndY[allpushedindsize]=findpointIDY-1
+                allpushedindsize=allpushedindsize+1
+        
+        check_seg=False
+        labelCounts=0
+        if allpushedindsize>=30: #check whether the cluster is valid
+            check_seg=True
+        if check_seg==True: #mark valid points
+            labelCounts+=1
+        else: #mark invalid points
+            self.lablematrix[findpointIDX-1][findpointIDY]=9
+            if findpointIDX+1<16:
+                self.lablematrix[findpointIDX+1][findpointIDY]=9
+            self.lablematrix[findpointIDX][findpointIDY-1]=9
+            self.lablematrix[findpointIDX][findpointIDY+1]=9
+        #print(self.lablematrix)
+        return self.lablematrix
+
+
+    def cloudsegmentation(self,pcd):#point cloud segmentation,to remove clusters with few points
+        for i in range(16):
+            for j in range(1800):
+                #print(j)
+                if self.lablematrix[i][j]==0: #to make labelmatrix
+                    self.labelcomponents(i,j) 
+        #print(self.lablematrix)
+        return self.lablematrix
+        
 
 class FeatureExtraction():
     """
@@ -30,14 +215,18 @@ class FeatureExtraction():
         self.edge_points = []
         self.plane_points = []
         self.features = []
+        self.ground_point=[]
     
     def process(self, pcn):
         self.processed_pcn = []
         self.edge_points = []
         self.plane_points = []
+        self.ground_point_index=[]
 
         """分割地面点"""
-        #xdt 写在此处
+        pcn=LEGO_cloudhandler.pointcloudproject(pcn)
+        pcn,self.ground_point_index=LEGO_cloudhandler.markground(pcn)
+        self.ground_point=pcn[self.ground_point_index,:]
 
         """分割地面点"""
         for i in range(pcn.shape[0]):
