@@ -40,6 +40,7 @@ class Node_PC(Node):
         #self.pcn = self.Cul_Curv.process(self.pcn)
         self.pcn=self.LEGO_cloudhandler.pointcloudproject(self.pcn)
         self.pcn,self.ground=self.LEGO_cloudhandler.markground(self.pcn)
+        self.pcn_groundlabel=self.LEGO_cloudhandler.cloudsegmentation(self.pcn)
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd)
@@ -144,6 +145,7 @@ class LEGO_cloudhandler():
         self.lablematrix=np.zeros((16,1800))
         self.groundmetrix=np.zeros(28800)
         self.groundpoint=[]
+        self.startindex=np.zeros(16)
         pass
 
     '''def startendangle(self,pcd): #to find start and end angle of the clooud
@@ -224,7 +226,7 @@ class LEGO_cloudhandler():
         #print(self.groundmetrix)
         return pcd,self.groundpoint
     
-    '''def labelcomponents(self,row,col):
+    def labelcomponents(self,row,col):
         labelcount=1
         self.queueIndX[0]=row
         self.queueIndY[0]=col
@@ -243,7 +245,7 @@ class LEGO_cloudhandler():
             findpointIDY=queueIndY[queueendInd]
             queuesize=queuesize-1
             queuestartInd=queuestartInd+1
-            self.labelcount[findpointIDX][findpointIDY]=labelcount #mark the poind we are going to search
+            self.lablematrix[findpointIDX][findpointIDY]=labelcount #mark the poind we are going to search
             if findpointIDX+1 <0 or findpointIDX-1<0 or findpointIDX+1>16 or findpointIDX-1>16: #index should be within the boundary
                 continue
             if findpointIDY+1>=1800:
@@ -263,7 +265,7 @@ class LEGO_cloudhandler():
                 queueIndX[queueendInd]=findpointIDY
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
-                self.labelcount[findpointIDX-1][findpointIDY]=labelcount
+                self.lablematrix[findpointIDX-1][findpointIDY]=labelcount
                 allPushedIndX[allpushedindsize]=findpointIDX-1
                 allPushedIndY[allpushedindsize]=findpointIDY
                 allpushedindsize=allpushedindsize+1
@@ -277,7 +279,7 @@ class LEGO_cloudhandler():
                 queueIndX[queueendInd]=findpointIDY
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
-                self.labelcount[findpointIDX+1][findpointIDY]=labelcount
+                self.lablematrix[findpointIDX+1][findpointIDY]=labelcount
                 allPushedIndX[allpushedindsize]=findpointIDX+1
                 allPushedIndY[allpushedindsize]=findpointIDY
                 allpushedindsize=allpushedindsize+1
@@ -291,7 +293,7 @@ class LEGO_cloudhandler():
                 queueIndX[queueendInd]=findpointIDY+1
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
-                self.labelcount[findpointIDX][findpointIDY+1]=labelcount
+                self.lablematrix[findpointIDX][findpointIDY+1]=labelcount
                 allPushedIndX[allpushedindsize]=findpointIDX
                 allPushedIndY[allpushedindsize]=findpointIDY+1
                 allpushedindsize=allpushedindsize+1
@@ -305,23 +307,50 @@ class LEGO_cloudhandler():
                 queueIndX[queueendInd]=findpointIDY-1
                 queuesize=queuesize+1
                 queueendInd=queueendInd+1
-                self.labelcount[findpointIDX][findpointIDY-1]=labelcount
+                self.lablematrix[findpointIDX][findpointIDY-1]=labelcount
                 allPushedIndX[allpushedindsize]=findpointIDX
                 allPushedIndY[allpushedindsize]=findpointIDY-1
                 allpushedindsize=allpushedindsize+1
         
         check_seg=False
+        labelCounts=0
         if allpushedindsize>=30: #check whether the cluster is valid
             check_seg=True
-        return check_seg'''
+        if check_seg==True: #mark valid points
+            labelCounts+=1
+        else: #mark invalid points
+            self.lablematrix[findpointIDX-1][findpointIDY]=9
+            self.lablematrix[findpointIDX+1][findpointIDY]=9
+            self.lablematrix[findpointIDX][findpointIDY-1]=9
+            self.lablematrix[findpointIDX][findpointIDY+1]=9
+        return self.lablematrix
 
 
-            
-
-
+    def cloudsegmentation(self,pcd):#point cloud segmentation,to remove clusters with few points
+        for i in range(16):
+            for j in range(1800):
+                if self.lablematrix[i][j]==0: #to make labelmatrix
+                    self.labelcomponents(i,j) 
+        return self.lablematrix
         
-
-    #def cloudsegmentation(self,pcd,groundmetrix):#point cloud segmentation,to remove clusters with few points
+        '''MMMM=[]
+        sizeofsegment=0 #to deal with noise, ground point and interval point
+        for m in range(16):
+            self.startindex[i]=sizeofsegment-1+5 #to record each scan's valid start point
+            for n in range(1800):
+                number=n+m*1800
+                if self.lablematrix[m][n]>0 or self.groundmetrix[number]==1:# deal with valid clusters or ground point
+                    if self.lablematrix[m][n]==9:#deal with invalid one
+                        if m>4 and n%5==0:
+                            a=pcd[number]
+                            MMMM.append(a)
+                            continue
+                        else:
+                            continue
+                    if self.groundmetrix[number]==1:
+                        if n%5!=0 and n>5 and n<1795:
+                            continue'''
+                        
 
 
                     
