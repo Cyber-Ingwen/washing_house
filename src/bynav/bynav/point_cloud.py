@@ -221,9 +221,9 @@ class LEGO_cloudhandler():
                 if abs(angle)<=10:
                     self.groundmetrix[upperID]=1
                     self.groundmetrix[lowerID]=1
-                self.groundpoint.append(lowerID)
+                    self.groundpoint.append(lowerID)
                 #print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
-        #print(self.groundmetrix)
+        print(self.groundmetrix)
         return pcd,self.groundpoint
     
     def labelcomponents(self,row,col):
@@ -241,18 +241,26 @@ class LEGO_cloudhandler():
         queueendInd=1
         allpushedindsize=1
         while(queuesize>0):#use BFS to find the neighbor point
-            findpointIDX=queueIndX[queuestartInd] #find a point 
-            findpointIDY=queueIndY[queueendInd]
+            findpointIDX=self.queueIndX[queuestartInd] #find a point 
+            findpointIDY=self.queueIndY[queueendInd]
+            findpointIDX=int(findpointIDX)
+            findpointIDY=int(findpointIDY)
             queuesize=queuesize-1
             queuestartInd=queuestartInd+1
             self.lablematrix[findpointIDX][findpointIDY]=labelcount #mark the poind we are going to search
             if findpointIDX+1 <0 or findpointIDX-1<0 or findpointIDX+1>16 or findpointIDX-1>16: #index should be within the boundary
                 continue
+            if self.lablematrix[findpointIDX-1][findpointIDY]!=0:#check whether it has been coverd
+                continue
+            if self.lablematrix[findpointIDX+1][findpointIDY]!=0:#check whether it has been coverd
+                continue
             if findpointIDY+1>=1800:
                 findpointIDY=0
+            if self.lablematrix[findpointIDX][findpointIDY+1]!=0:#check whether it has been coverd
+                continue
             if findpointIDY-1<0:
                 findpointIDY=1800
-            if self.lablematrix[findpointIDX-1][findpointIDY]!=0:#check whether it has been coverd
+            if self.lablematrix[findpointIDX][findpointIDY-1]!=0:#check whether it has been coverd
                 continue
             list_compare[0]=self.rangematrix[findpointIDX][findpointIDY] #this is the range between findpoint and lidar
             dis_left=self.rangematrix[findpointIDX-1][findpointIDY] #use col and row id to find the range from the left point to the lidar
@@ -320,17 +328,21 @@ class LEGO_cloudhandler():
             labelCounts+=1
         else: #mark invalid points
             self.lablematrix[findpointIDX-1][findpointIDY]=9
-            self.lablematrix[findpointIDX+1][findpointIDY]=9
+            if findpointIDX+1<16:
+                self.lablematrix[findpointIDX+1][findpointIDY]=9
             self.lablematrix[findpointIDX][findpointIDY-1]=9
             self.lablematrix[findpointIDX][findpointIDY+1]=9
+        #print(self.lablematrix)
         return self.lablematrix
 
 
     def cloudsegmentation(self,pcd):#point cloud segmentation,to remove clusters with few points
         for i in range(16):
             for j in range(1800):
+                #print(j)
                 if self.lablematrix[i][j]==0: #to make labelmatrix
                     self.labelcomponents(i,j) 
+        #print(self.lablematrix)
         return self.lablematrix
         
         '''MMMM=[]
