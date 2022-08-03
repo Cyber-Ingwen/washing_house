@@ -2,13 +2,13 @@ import math
 import numpy as np
 
 
-class Cul_Curvature():
+class Cul_Curvature(): #对曲率的计算，和icp暂时不用了
     def __init__(self):
         self.processed_pcn = []
         self.edge_points = []
         self.plane_points = []
     
-    def process(self, pcn):
+    def process(self, pcn): #pcn[]
         self.processed_pcn = []
         list = []
         list2 = []

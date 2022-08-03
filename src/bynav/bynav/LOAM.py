@@ -22,17 +22,17 @@ class LOAM():
         return pcn
 
 
-class FeatureExtraction():
+class FeatureExtraction(): #特征提取
     """
     LOAM算法提取特征
     """
     def __init__(self):
-        self.edge_points = []
-        self.plane_points = []
-        self.features = []
+        self.edge_points = [] #边缘
+        self.plane_points = [] #平面
+        self.features = [] #特征
     
     def process(self, pcn):
-        self.processed_pcn = []
+        self.processed_pcn = []     #经过筛选的pcn[?,5]
         self.edge_points = []
         self.plane_points = []
 
@@ -41,19 +41,19 @@ class FeatureExtraction():
 
         """分割地面点"""
         for i in range(pcn.shape[0]):
-            if i % 16 >= 4:
+            if i % 16 >= 4:     #16线选12线，防止地面圆的干扰
                 self.processed_pcn.append(pcn[i])
 
         """提取竖线和平面"""
         for i in range(len(self.processed_pcn)):
-            x = self.processed_pcn[i][0]
+            x = self.processed_pcn[i][0] #提取前三个数据
             y = self.processed_pcn[i][1]
             z = self.processed_pcn[i][2]
             
             curv = 0
             sum = [0, 0, 0]
             
-            if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < len(self.processed_pcn))):
+            if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < len(self.processed_pcn))):  #在范围内就这样计算曲率
                 for j in range(5):
                     next_index = i + 12 * j
                     last_index = i - 12 * j
@@ -64,7 +64,7 @@ class FeatureExtraction():
                     sum[2] += (z - self.processed_pcn[last_index][2])
                     sum[2] += (z - self.processed_pcn[next_index][2])
 
-                curv = sum[0] ** 2 + sum[1] ** 2 + sum[2] ** 2 
+                curv = sum[0] ** 2 + sum[1] ** 2 + sum[2] ** 2  #求和的平方的和
             
             if not math.isnan(curv): 
                 if(curv < 100) & (curv > 0.2):

@@ -9,7 +9,7 @@ import open3d as o3d
 
 
 import sys,os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) #引入文件目录
 sys.path.append(BASE_DIR)
 
 from Cul_Curvature import Cul_Curvature
@@ -40,9 +40,8 @@ class Node_PC(Node):
 
     def callback(self, data):
         """读取解析数据"""
-        assert isinstance(data, PointCloud2)
-        pcd_as_numpy_array = np.array(list(self.read_points(data)))
-        self.pcn = self.label(pcd_as_numpy_array)
+        assert isinstance(data, PointCloud2)  #assert打断点（如果是false），isinstance判断变量类型（返回bool），PointCloud2为导入的一种格式
+        pcd_as_numpy_array = np.array(list(self.read_points(data))) #将数据格式转为numpy  #使用自定义函数        self.pcn = self.label(pcd_as_numpy_array) #为[n,3]的pcn填充scan和degree至[n,5]
         
         self.loam.input(self.pcn)
         
@@ -62,28 +61,28 @@ class Node_PC(Node):
         self.vis.update_renderer()
         self.vis.poll_events()
     
-    def label(self, pcn):
+    def label(self, pcn):   
         """给点云标注角度和线"""
-        scan_mat = np.zeros(pcn.shape[0])
+        scan_mat = np.zeros(pcn.shape[0]) #行维度，先确定同维度，用0填充，都是[n,]维
         degree_mat = np.zeros(pcn.shape[0])
         
-        if pcn.shape[0] == 28800:
+        if pcn.shape[0] == 28800: #若数据包读取正常
             for i in range(pcn.shape[0]):
-                scan_mat[i] = (i % 16) if (i % 16) < 9 else 25 - (i % 16)
-                degree_mat[i] = i % 1800
+                scan_mat[i] = (i % 16) if (i % 16) < 9 else 25 - (i % 16) #由scan的编码顺序决定
+                degree_mat[i] = i % 1800 #圆周上每0.2度有一个点
         else:
-            pass # 可改为计算
+            pass # 可改为计算，用其他方法编号
             
-        scan_mat = np.resize(scan_mat, (pcn.shape[0], 1))
+        scan_mat = np.resize(scan_mat, (pcn.shape[0], 1)) #将前者维度改为后者   
         degree_mat = np.resize(degree_mat, (pcn.shape[0], 1))
-        pcn = np.concatenate((pcn, scan_mat, degree_mat), axis = 1)
-        
+        pcn = np.concatenate((pcn, scan_mat, degree_mat), axis = 1) #组合[n，5]
+
         return pcn
 
     def read_points(self, cloud):
         """读取点云数据"""
         assert isinstance(cloud, PointCloud2)
-        fmt = self._get_struct_fmt(cloud.is_bigendian, cloud.fields)
+        fmt = self._get_struct_fmt(cloud.is_bigendian, cloud.fields) #使用自定义函数
         width, height, point_step, row_step, data, isnan = cloud.width, cloud.height, cloud.point_step, cloud.row_step, cloud.data, math.isnan
         unpack_from = struct.Struct(fmt).unpack_from
 
@@ -95,10 +94,10 @@ class Node_PC(Node):
 
     def _get_struct_fmt(self, is_bigendian, fields, field_names=None):
         """获取数据格式"""
-        fmt = '>' if is_bigendian else '<'
+        fmt = '>' if is_bigendian else '<'  #大端小端判断
 
         offset = 0
-        for field in (f for f in sorted(fields, key=lambda f: f.offset)):
+        for field in (f for f in sorted(fields, key=lambda f: f.offset)):   #对fields排序，排序标准为 key=lambda 元素: 元素[字段索引]
             if offset < field.offset:
                 fmt += 'x' * (field.offset - offset)
                 offset = field.offset
