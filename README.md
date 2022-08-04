@@ -10,6 +10,7 @@ sudo apt-get install -y libyaml-cpp-dev libpcap-dev
 ```sh
 colcon build --symlink-install 
 source install/setup.bash
+echo source install/setup.bash >> ~/.bashrc
 ```
 
 ```sh

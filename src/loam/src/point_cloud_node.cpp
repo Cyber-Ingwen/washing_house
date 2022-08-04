@@ -36,11 +36,10 @@ class point_cloud_node: public rclcpp::Node
             pcl::fromROSMsg(*msg_ptr, *cloud);
 
             /*可视化点云*/
-            pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(cloud, "intensity");
+            pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(cloud, "z");
             visualizer->removeAllPointClouds();
             visualizer->addPointCloud(cloud, intensity, viz_name, 0);
             visualizer->spinOnce(0.001);
-            RCLCPP_INFO(this->get_logger(), "succuse!");
         }
 };
 
