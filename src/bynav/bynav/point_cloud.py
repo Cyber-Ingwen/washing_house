@@ -267,7 +267,7 @@ class LEGO_cloudhandler():
             list_compare[1]=dis_left
             d1=max(list_compare)
             d2=min(list_compare)
-            angel=atan2(d2*sin(angle_hor),(d1-d2*cos(angle_hor)))
+            angle=math.atan2(d2*math.sin(angle_hor),(d1-d2*math.cos(angle_hor)))
             if angle>angle_bon:
                 queueIndX[queueendInd]=findpointIDX-1
                 queueIndX[queueendInd]=findpointIDY
@@ -281,7 +281,7 @@ class LEGO_cloudhandler():
             list_compare[1]=dis_right
             d1=max(list_compare)
             d2=min(list_compare)
-            angel=atan2(d2*sin(angle_hor),(d1-d2*cos(angle_hor)))
+            angle=math.atan2(d2*math.sin(angle_hor),(d1-d2*math.cos(angle_hor)))
             if angle>angle_bon:
                 queueIndX[queueendInd]=findpointIDX+1
                 queueIndX[queueendInd]=findpointIDY
@@ -295,7 +295,7 @@ class LEGO_cloudhandler():
             list_compare[1]=dis_up
             d1=max(list_compare)
             d2=min(list_compare)
-            angel=atan2(d2*sin(angle_ver),(d1-d2*cos(angle_ver)))
+            angle=math.atan2(d2*math.sin(angle_ver),(d1-d2*math.cos(angle_ver)))
             if angle>angle_bon:
                 queueIndX[queueendInd]=findpointIDX
                 queueIndX[queueendInd]=findpointIDY+1
@@ -309,7 +309,7 @@ class LEGO_cloudhandler():
             list_compare[1]=dis_low
             d1=max(list_compare)
             d2=min(list_compare)
-            angel=atan2(d2*sin(angle_ver),(d1-d2*cos(angle_ver)))
+            angle=math.atan2(d2*math.sin(angle_ver),(d1-d2*math.cos(angle_ver)))
             if angle>angle_bon:
                 queueIndX[queueendInd]=findpointIDX
                 queueIndX[queueendInd]=findpointIDY-1
