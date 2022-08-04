@@ -12,6 +12,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "apps/pcl_viz.hpp"
+#include "apps/align.hpp"
 
 class CloudSubscriber : public rclcpp::Node
 {
@@ -21,6 +22,7 @@ class CloudSubscriber : public rclcpp::Node
   private:
     std::string viz_name;
     boost::shared_ptr<CloudVisualizer> visualizer;
+    boost::shared_ptr<CloudAligner> aligner;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscriber_;
     void msg_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);

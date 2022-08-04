@@ -40,7 +40,7 @@ namespace robosense
 {
 namespace lidar
 {
-class PointCloudRosAdapter : virtual public AdapterBase
+class w : virtual public AdapterBase
 {
 public:
   PointCloudRosAdapter() = default;

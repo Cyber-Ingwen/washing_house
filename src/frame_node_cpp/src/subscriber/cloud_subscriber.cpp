@@ -1,4 +1,5 @@
 #include "subscriber/cloud_subscriber.hpp"
+#include <charconv>
 
 // #include "glog/logging.h"
 
@@ -6,6 +7,8 @@ CloudSubscriber::CloudSubscriber(std::string name, std::string topic_name) : Nod
 {
     viz_name = "pcl cloud";
     visualizer = boost::make_shared<CloudVisualizer>(viz_name);
+
+    aligner = boost::make_shared<CloudAligner>();
 
     subscriber_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 10, std::bind(&CloudSubscriber::msg_callback, this, std::placeholders::_1));
 }
@@ -16,8 +19,17 @@ void CloudSubscriber::msg_callback(const sensor_msgs::msg::PointCloud2::SharedPt
     CloudSubscriber::fromROSMsg(*msg_ptr, *cloud);
     // RCLCPP_INFO(this->get_logger(), "succuse!");
 
-    visualizer->VisualUpdate(cloud, viz_name);
-    RCLCPP_INFO(this->get_logger(), "succuse!");
+    std::string s = std::to_string(cloud->width);
+    char const *pchar = s.c_str();
+    RCLCPP_INFO(this->get_logger(), "CloudSize: ");
+    RCLCPP_INFO(this->get_logger(), pchar);
+    aligner->downSample(cloud);
+    s = std::to_string(cloud->width);
+    pchar = s.c_str();
+    RCLCPP_INFO(this->get_logger(), "CloudSize: ");
+    RCLCPP_INFO(this->get_logger(), pchar);
+
+    visualizer->visualUpdate(cloud, viz_name);
 };
 
 template<typename T>
