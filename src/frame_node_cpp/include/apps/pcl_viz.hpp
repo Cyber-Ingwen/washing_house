@@ -17,7 +17,7 @@ class CloudVisualizer
 
         // template<typename T>
         // void VisualUpdate(typename pcl::PointCloud<T>::Ptr cloud, std::string name);
-        void VisualUpdate(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, std::string name);
+        void visualUpdate(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, std::string name);
 
     private:
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
