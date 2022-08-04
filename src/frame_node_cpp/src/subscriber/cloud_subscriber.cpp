@@ -19,13 +19,13 @@ void CloudSubscriber::msg_callback(const sensor_msgs::msg::PointCloud2::SharedPt
     CloudSubscriber::fromROSMsg(*msg_ptr, *cloud);
     // RCLCPP_INFO(this->get_logger(), "succuse!");
 
+    // std::string s = std::to_string(cloud->width);
+    // char const *pchar = s.c_str();
+    // RCLCPP_INFO(this->get_logger(), "CloudSize: ");
+    // RCLCPP_INFO(this->get_logger(), pchar);
+    aligner->downSample(cloud);
     std::string s = std::to_string(cloud->width);
     char const *pchar = s.c_str();
-    RCLCPP_INFO(this->get_logger(), "CloudSize: ");
-    RCLCPP_INFO(this->get_logger(), pchar);
-    aligner->downSample(cloud);
-    s = std::to_string(cloud->width);
-    pchar = s.c_str();
     RCLCPP_INFO(this->get_logger(), "CloudSize: ");
     RCLCPP_INFO(this->get_logger(), pchar);
 
