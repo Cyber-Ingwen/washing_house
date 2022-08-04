@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(frame_node_cpp)
 
+SET(CMAKE_BUILD_TYPE "Debug")
+
 find_package(ament_cmake_auto REQUIRED)
 # find_package(sensor_msgs REQUIRED)
 # find_package(rclcpp REQUIRED)
