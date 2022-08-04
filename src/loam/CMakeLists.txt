@@ -15,3 +15,8 @@ ament_auto_add_executable (point_cloud_node
 target_link_libraries(point_cloud_node ${PCL_LIBRARIES})
 
 ament_auto_package ()
+
+install(TARGETS
+point_cloud_node
+  DESTINATION lib/${PROJECT_NAME}
+)
