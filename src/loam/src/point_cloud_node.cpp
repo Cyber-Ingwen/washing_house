@@ -18,6 +18,8 @@ class point_cloud_node: public rclcpp::Node
         boost::shared_ptr<pcl::visualization::PCLVisualizer> visualizer;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_point_cloud;
 
+        LidarOdometry lidar_odometry;
+
         point_cloud_node(std::string name): Node(name)
         {
             RCLCPP_INFO(this->get_logger(), "point_cloud_node已创建");
@@ -37,9 +39,11 @@ class point_cloud_node: public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
             pcl::fromROSMsg(*msg_ptr, *cloud);
 
-            LidarOdometry lidar_odometry;
-            pcl::PointCloud<pcl::PointXYZI> pcn = lidar_odometry.feature_extraction(*cloud);
-            pcl::PointCloud<pcl::PointXYZI>::Ptr ptr = pcn.makeShared();
+            /*运行算法*/
+            lidar_odometry.feature_extraction(*cloud);
+            lidar_odometry.matching();
+
+            auto ptr = lidar_odometry.pcn.makeShared();
 
             /*可视化点云*/
             pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "z");

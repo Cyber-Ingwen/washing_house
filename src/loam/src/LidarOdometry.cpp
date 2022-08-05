@@ -1,14 +1,25 @@
 #include "LidarOdometry.hpp"
 #include <iostream>
 #include "stdio.h"
+#include <cmath>
+
+using namespace Eigen;
+using namespace std;
 
 LidarOdometry::LidarOdometry()
 {
 
 }
 
-pcl::PointCloud<pcl::PointXYZI> LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
+int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 {
+    pcn.clear();
+    edge_points.clear();
+    plane_points.clear();
+    last_pcn.clear();
+    last_edge_points.clear();
+    last_plane_points.clear();
+
     /* 分割地面点 */
     for (int i = 0; i < cloud.points.size(); i++)
     {
@@ -55,5 +66,41 @@ pcl::PointCloud<pcl::PointXYZI> LidarOdometry::feature_extraction(pcl::PointClou
         }
     }
 
-    return edge_points;
+    last_pcn = pcn;
+    last_edge_points = edge_points;
+    last_plane_points = plane_points;
+
+    return 1;
+}
+
+int LidarOdometry::matching(void)
+{
+    pcl::PointCloud<pcl::PointXYZI> rew_edge_points = edge_points;
+    edge_points = this->transform(edge_points);
+
+    return 1;
+}
+
+pcl::PointCloud<pcl::PointXYZI> LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI> cloud)
+{
+    auto pc_matrix = cloud.getMatrixXfMap(3, 8, 0);
+    std::cout << "p1:" << cloud.points[0] << std::endl;
+
+    Matrix3f R;
+    R <<2.0, 0.0, 0.0,
+        0.0, 2.0, 0.0,
+        0.0, 0.0, 2.0;
+    
+    VectorXf v;
+    for(int i = 0; i < pc_matrix.row(0).size(); i++)
+    {
+        v = pc_matrix.col(i);
+        pc_matrix.col(i) = R * v.matrix();
+    }
+
+    std::cout << "e:" << pc_matrix.col(0) << std::endl;
+    std::cout << "p2:" << cloud.points[0] << std::endl;
+    std::cout << "____________" << std::endl;
+
+    return cloud;
 }

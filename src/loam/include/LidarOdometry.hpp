@@ -1,4 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
+#include <Eigen/Dense>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -13,8 +14,14 @@ class LidarOdometry
         pcl::PointCloud<pcl::PointXYZI> edge_points;
         pcl::PointCloud<pcl::PointXYZI> plane_points;
 
-        LidarOdometry(/* args */);
+        pcl::PointCloud<pcl::PointXYZI> last_pcn;
+        pcl::PointCloud<pcl::PointXYZI> last_edge_points;
+        pcl::PointCloud<pcl::PointXYZI> last_plane_points;
+
+        LidarOdometry();
         
-        pcl::PointCloud<pcl::PointXYZI> feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
+        int feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
+        int matching(void);
+        pcl::PointCloud<pcl::PointXYZI> transform(pcl::PointCloud<pcl::PointXYZI> cloud);
 };
 
