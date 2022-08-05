@@ -103,7 +103,6 @@ pcl::PointCloud<pcl::PointXYZI> LidarOdometry::transform(pcl::PointCloud<pcl::Po
         sin(alpha)*sin(gamma) - sin(beta)*cos(alpha)*cos(gamma), sin(alpha)*cos(gamma) + sin(beta)*sin(gamma)*cos(alpha), cos(alpha)*cos(beta);
 
     VectorXf v;
-    std::cout << "e:" << pc_matrix.row(0).size() << std::endl;
     for(int i = 0; i < pc_matrix.row(0).size(); i++)
     {
         v = pc_matrix.col(i);
