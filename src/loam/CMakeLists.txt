@@ -10,7 +10,8 @@ include_directories(include ${rclcpp_INCLUDE_DIRS})
 ament_auto_find_build_dependencies ()
 
 ament_auto_add_executable (point_cloud_node
-    src/point_cloud_node.cpp)
+    src/point_cloud_node.cpp
+    src/LidarOdometry.cpp)
 
 target_link_libraries(point_cloud_node ${PCL_LIBRARIES})
 

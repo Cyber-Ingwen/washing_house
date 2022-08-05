@@ -21,7 +21,7 @@ class point_cloud_node: public rclcpp::Node
             RCLCPP_INFO(this->get_logger(), "point_cloud_node已创建");
 
             /*创建并初始化接收*/
-            std::string topic_name = "/kitti/velo/pointcloud";
+            std::string topic_name = "/rslidar_points";
             sub_point_cloud = this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 10, std::bind(&point_cloud_node::callback, this, std::placeholders::_1));
         
             /*配置可视化*/
