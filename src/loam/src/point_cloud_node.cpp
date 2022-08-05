@@ -5,6 +5,10 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
+#include "LidarOdometry.hpp"
+
+#include <iostream>
+
 
 class point_cloud_node: public rclcpp::Node
 {
@@ -35,10 +39,15 @@ class point_cloud_node: public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
             pcl::fromROSMsg(*msg_ptr, *cloud);
 
+            std::cout<<"1"<<std::endl;
+            LidarOdometry lidar_odometry;
+            pcl::PointCloud<pcl::PointXYZI> pcn = lidar_odometry.feature_extraction(*cloud);
+            pcl::PointCloud<pcl::PointXYZI>::Ptr ptr = pcn.makeShared();
+
             /*可视化点云*/
-            pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(cloud, "z");
+            pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "z");
             visualizer->removeAllPointClouds();
-            visualizer->addPointCloud(cloud, intensity, viz_name, 0);
+            visualizer->addPointCloud(ptr, intensity, viz_name, 0);
             visualizer->spinOnce(0.001);
         }
 };

@@ -1,3 +1,4 @@
+#include "rclcpp/rclcpp.hpp"
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -9,9 +10,11 @@ class LidarOdometry
 {
     public:
         pcl::PointCloud<pcl::PointXYZI> pcn;
+        pcl::PointCloud<pcl::PointXYZI> edge_points;
+        pcl::PointCloud<pcl::PointXYZI> plane_points;
 
         LidarOdometry(/* args */);
         
-        void feature_extraction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr);
+        pcl::PointCloud<pcl::PointXYZI> feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
 };
 
