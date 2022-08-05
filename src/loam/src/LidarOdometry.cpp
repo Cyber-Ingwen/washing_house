@@ -2,7 +2,7 @@
 #include <iostream>
 #include "stdio.h"
 
-LidarOdometry::LidarOdometry(/* args */)
+LidarOdometry::LidarOdometry()
 {
 
 }
@@ -13,14 +13,9 @@ pcl::PointCloud<pcl::PointXYZI> LidarOdometry::feature_extraction(pcl::PointClou
     pcl::PointXYZI point;
     for (int i = 0; i < cloud.points.size(); i++)
     {
-        int j = 0;
         if(i % 16 >= 4)
         {
-            point.x = cloud.points[i].x;
-            point.y = cloud.points[i].y;
-            point.z = cloud.points[i].z;
-            pcn.points.push_back(point);
-            j++;
+            pcn.points.push_back(cloud.points[i]);
         }
     }
 
@@ -61,5 +56,5 @@ pcl::PointCloud<pcl::PointXYZI> LidarOdometry::feature_extraction(pcl::PointClou
         }
     }
 
-    return pcn;
+    return edge_points;
 }
