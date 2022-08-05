@@ -43,9 +43,8 @@ class point_cloud_node: public rclcpp::Node
             lidar_odometry.feature_extraction(*cloud);
             lidar_odometry.matching();
 
-            auto ptr = lidar_odometry.pcn.makeShared();
-
             /*可视化点云*/
+            auto ptr = lidar_odometry.plane_points.makeShared();
             pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "z");
             visualizer->removeAllPointClouds();
             visualizer->addPointCloud(ptr, intensity, viz_name, 0);

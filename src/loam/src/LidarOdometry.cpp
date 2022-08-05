@@ -86,21 +86,29 @@ pcl::PointCloud<pcl::PointXYZI> LidarOdometry::transform(pcl::PointCloud<pcl::Po
     auto pc_matrix = cloud.getMatrixXfMap(3, 8, 0);
     std::cout << "p1:" << cloud.points[0] << std::endl;
 
+    float alpha, beta, gamma;
+    float delta_x, delta_y, delta_z;
+
+    alpha = T[0];
+    beta = T[1];
+    gamma = T[2];
+    delta_x = T[3];
+    delta_y = T[4];
+    delta_z = T[5];
+
     Matrix3f R;
-    R <<2.0, 0.0, 0.0,
-        0.0, 2.0, 0.0,
-        0.0, 0.0, 2.0;
-    
+    Vector3f t(delta_x, delta_y, delta_z);
+    R <<cos(beta)*cos(gamma), -sin(gamma)*cos(beta), sin(beta),
+        sin(alpha)*sin(beta)*cos(gamma) + sin(gamma)*cos(alpha), -sin(alpha)*sin(beta)*sin(gamma) + cos(alpha)*cos(gamma), -sin(alpha)*cos(beta),
+        sin(alpha)*sin(gamma) - sin(beta)*cos(alpha)*cos(gamma), sin(alpha)*cos(gamma) + sin(beta)*sin(gamma)*cos(alpha), cos(alpha)*cos(beta);
+
     VectorXf v;
+    std::cout << "e:" << pc_matrix.row(0).size() << std::endl;
     for(int i = 0; i < pc_matrix.row(0).size(); i++)
     {
         v = pc_matrix.col(i);
-        pc_matrix.col(i) = R * v.matrix();
+        pc_matrix.col(i) = R * v.matrix() + t.matrix();
     }
-
-    std::cout << "e:" << pc_matrix.col(0) << std::endl;
-    std::cout << "p2:" << cloud.points[0] << std::endl;
-    std::cout << "____________" << std::endl;
 
     return cloud;
 }
