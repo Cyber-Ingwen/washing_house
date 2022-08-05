@@ -10,7 +10,6 @@ LidarOdometry::LidarOdometry()
 pcl::PointCloud<pcl::PointXYZI> LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 {
     /* 分割地面点 */
-    pcl::PointXYZI point;
     for (int i = 0; i < cloud.points.size(); i++)
     {
         if(i % 16 >= 4)
