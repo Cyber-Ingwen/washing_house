@@ -193,6 +193,7 @@ class LEGO_cloudhandler():
                 continue
             self.index[i]=index
             #print(self.index)
+        print(type(self.rangematrix))
         #pcd=np.insert(pcd,4,values=index,axis=1)
         return pcd
     
@@ -223,7 +224,7 @@ class LEGO_cloudhandler():
                     self.groundmetrix[lowerID]=1
                     self.groundpoint.append(lowerID)
                 #print(self.groundmetrix[upperID],self.groundmetrix[lowerID],"------------")
-        print(self.groundmetrix)
+        #print(self.groundmetrix)
         return pcd,self.groundpoint
     
     def labelcomponents(self,row,col):
