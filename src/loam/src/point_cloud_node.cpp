@@ -40,11 +40,17 @@ class point_cloud_node: public rclcpp::Node
             pcl::fromROSMsg(*msg_ptr, *cloud);
 
             /*运行算法*/
+            
             lidar_odometry.feature_extraction(*cloud);
-            lidar_odometry.matching();
+            float T[6];
+
+            
+            lidar_odometry.matching(T);
+            
+            //cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
 
             /*可视化点云*/
-            auto ptr = lidar_odometry.plane_points.makeShared();
+            auto ptr = lidar_odometry.edge_points.makeShared();
             pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "z");
             visualizer->removeAllPointClouds();
             visualizer->addPointCloud(ptr, intensity, viz_name, 0);

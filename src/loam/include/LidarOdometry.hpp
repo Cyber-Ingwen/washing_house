@@ -10,7 +10,6 @@
 class LidarOdometry
 {
     public:
-        float T[6];
         pcl::PointCloud<pcl::PointXYZI> pcn;
         pcl::PointCloud<pcl::PointXYZI> edge_points;
         pcl::PointCloud<pcl::PointXYZI> plane_points;
@@ -20,7 +19,7 @@ class LidarOdometry
 
         LidarOdometry();
         int feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
-        int matching(void);
-        pcl::PointCloud<pcl::PointXYZI> transform(pcl::PointCloud<pcl::PointXYZI> cloud);
+        int matching(float *T);
+        pcl::PointCloud<pcl::PointXYZI> transform(pcl::PointCloud<pcl::PointXYZI> cloud, float *T);
 };
 

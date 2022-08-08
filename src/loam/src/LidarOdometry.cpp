@@ -6,6 +6,10 @@
 using namespace Eigen;
 using namespace std;
 
+#include <ctime>
+
+clock_t t0, t1;
+
 LidarOdometry::LidarOdometry()
 {
 
@@ -73,18 +77,46 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
     return 1;
 }
 
-int LidarOdometry::matching(void)
+int LidarOdometry::matching(float *T)
 {
-    pcl::PointCloud<pcl::PointXYZI> rew_edge_points = edge_points;
-    edge_points = this->transform(edge_points);
+    auto raw_edge_points = edge_points;
+    auto raw_edge_points_matrix = raw_edge_points.getMatrixXfMap(3, 8, 0);
+    t0=clock();
+    edge_points = this->transform(edge_points, T);
+    t1=clock();
+    
+    
+    auto edge_points_matrix = edge_points.getMatrixXfMap(3, 8, 0);
+    auto last_edge_points_matrix = last_edge_points.getMatrixXfMap(3, 8, 0);
+
+    cout << "len:" << edge_points.points.size() << endl;
+    t0=clock();
+    for (int i = 0; i < edge_points.points.size(); i++)
+    {
+        VectorXf edge_point = edge_points_matrix.col(i);
+        VectorXf distance_vect(edge_points.points.size());
+
+        for (int j = 0; j < last_edge_points.points.size(); j++)
+        {
+            VectorXf last_point = last_edge_points_matrix.col(j);
+            float distance = (last_point - edge_point).norm();
+            distance_vect(j) = distance;
+        }
+
+        ArrayXi index = ArrayXi::LinSpaced(distance_vect.size(), 0, distance_vect.size() - 1);
+        auto rule = [distance_vect](float a, float b) -> bool{return distance_vect(a) < distance_vect(b);};
+        //sort(index.data(), index.data() + index.size(), rule);
+    }
+    t1=clock();
+    double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;
+    cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
 
     return 1;
 }
 
-pcl::PointCloud<pcl::PointXYZI> LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI> cloud)
+pcl::PointCloud<pcl::PointXYZI> LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI> cloud, float *T)
 {
     auto pc_matrix = cloud.getMatrixXfMap(3, 8, 0);
-    std::cout << "p1:" << cloud.points[0] << std::endl;
 
     float alpha, beta, gamma;
     float delta_x, delta_y, delta_z;

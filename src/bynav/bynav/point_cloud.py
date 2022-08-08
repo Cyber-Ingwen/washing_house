@@ -44,7 +44,9 @@ class Node_PC(Node):
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
         self.pcn = self.label(pcd_as_numpy_array)
         
+        t0 = time.time()
         self.loam.input(self.pcn)
+        print("T:", time.time()-t0)
         
         #self.curv_pcn = self.Cul_Curv.process(self.pcn)
         self.curv_pcn = self.loam.output(self.pcn)
