@@ -26,13 +26,20 @@ include_directories(include ${rclcpp_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 
 ament_auto_find_build_dependencies ()
 
-add_library(ndt_omp
+ament_auto_add_library(ndt_omp SHARED
   src/pclomp/voxel_grid_covariance_omp.cpp
   src/pclomp/ndt_omp.cpp
   src/pclomp/gicp_omp.cpp
 )
 
 target_link_libraries(ndt_omp ${PCL_LIBRARIES})
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(ndt_omp OpenMP::OpenMP_CXX)
+else()
+  message(WARNING "OpenMP not found")
+endif()
+
 
 ament_auto_add_executable (frame_node
     src/frame_node.cpp 
@@ -46,11 +53,5 @@ add_dependencies(frame_node
   )
 
 target_link_libraries(frame_node ${PCL_LIBRARIES})
-
-if(OpenMP_CXX_FOUND)
-  target_link_libraries(ndt_omp OpenMP::OpenMP_CXX)
-else()
-  message(WARNING "OpenMP not found")
-endif()
 
 ament_auto_package ()
