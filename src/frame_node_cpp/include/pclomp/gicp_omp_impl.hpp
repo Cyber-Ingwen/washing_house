@@ -40,6 +40,12 @@
 #ifndef PCL_REGISTRATION_IMPL_GICP_OMP_HPP_
 #define PCL_REGISTRATION_IMPL_GICP_OMP_HPP_
 
+#ifndef _OPENMP
+#define _OPENMP
+int omp_get_max_threads() { return 1; }
+int omp_get_thread_num() { return 0; }
+#endif
+
 #include <atomic>
 #include <pcl/registration/boost.h>
 #include <pcl/registration/exceptions.h>

@@ -42,6 +42,12 @@
 #ifndef PCL_REGISTRATION_NDT_OMP_IMPL_H_
 #define PCL_REGISTRATION_NDT_OMP_IMPL_H_
 
+#ifndef _OPENMP
+#define _OPENMP
+int omp_get_max_threads() { return 1; }
+int omp_get_thread_num() { return 0; }
+#endif
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributionsTransform ()
@@ -169,11 +175,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   // but the normalization constants need to be modified for it to be globally accurate
   trans_probability_ = score / static_cast<double> (input_->points.size ());
 }
-
-#ifndef _OPENMP
-int omp_get_max_threads() { return 1; }
-int omp_get_thread_num() { return 0; }
-#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget> double

@@ -1,4 +1,5 @@
 #include "subscriber/cloud_subscriber.hpp"
+#include <pcl/common/impl/io.hpp>
 #include <charconv>
 
 // #include "glog/logging.h"
@@ -16,13 +17,12 @@ CloudSubscriber::CloudSubscriber(std::string name, std::string topic_name) : Nod
 void CloudSubscriber::msg_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr )
 {
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     CloudSubscriber::fromROSMsg(*msg_ptr, *cloud);
+
+    // pcl::copyPointCloud(*cloud, *cloud_xyz);
     // RCLCPP_INFO(this->get_logger(), "succuse!");
 
-    // std::string s = std::to_string(cloud->width);
-    // char const *pchar = s.c_str();
-    // RCLCPP_INFO(this->get_logger(), "CloudSize: ");
-    // RCLCPP_INFO(this->get_logger(), pchar);
     aligner->downSample(cloud);
     std::string s = std::to_string(cloud->width);
     char const *pchar = s.c_str();
@@ -30,6 +30,8 @@ void CloudSubscriber::msg_callback(const sensor_msgs::msg::PointCloud2::SharedPt
     RCLCPP_INFO(this->get_logger(), pchar);
 
     visualizer->visualUpdate(cloud, viz_name);
+
+    aligner->ndtAlign();
 };
 
 template<typename T>

@@ -8,7 +8,7 @@ sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev
 ```
 
 ```sh
-colcon build --symlink-install 
+colcon build --symlink-install --parallel-workers 8
 source install/setup.bash
 echo source install/setup.bash >> ~/.bashrc
 ```
