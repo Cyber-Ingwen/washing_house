@@ -40,9 +40,11 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
         float x = pcn.points[i].x;
         float y = pcn.points[i].y;
         float z = pcn.points[i].z;
+        float r0 = x*x + y*y + z*z;
 
         float curv = 0;
         float sum[3] = {0, 0, 0};
+        float sum2 = 0;
 
         if((i - 12 * 5 >= 0 ) && (i + 12 * 5 < pcn.points.size()))
         {
@@ -56,15 +58,28 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
                 sum[1] += (y - pcn.points[next_index].y);
                 sum[2] += (z - pcn.points[last_index].z);
                 sum[2] += (z - pcn.points[next_index].z);
+
+                sum2 += (x - pcn.points[last_index].x) * (x - pcn.points[last_index].x) + (y - pcn.points[last_index].y) * (y - pcn.points[last_index].y) + (z - pcn.points[last_index].z) * (z - pcn.points[last_index].z);
+                sum2 += (x - pcn.points[next_index].x) * (x - pcn.points[next_index].x) + (y - pcn.points[next_index].y) * (y - pcn.points[next_index].y) + (z - pcn.points[next_index].z) * (z - pcn.points[next_index].z);
             }
 
-            curv = sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2];
+            curv = (sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / (sum2);
+
+            int next_index = i + 12 * 5;
+            int last_index = i - 12 * 5;
+            float rl = pcn.points[last_index].x * pcn.points[last_index].x + pcn.points[last_index].y * pcn.points[last_index].y + pcn.points[last_index].z * pcn.points[last_index].z;
+            float rn = pcn.points[next_index].x * pcn.points[next_index].x + pcn.points[next_index].y * pcn.points[next_index].y + pcn.points[next_index].z * pcn.points[next_index].z;
+            if ((abs(rl - r0) / r0 > 0.2) || (abs(rn - r0) / r0 > 0.2))
+            {
+                curv = -1;
+            }
         }
 
-        if((curv < 1) && (curv > 0.2))
+        if((curv < 100) && (curv > 0.2))
         {
-            if(rand() % 10 > 6)
+            if(rand() % 10 > 5)
             {
+                pcn.points[i].intensity = curv;
                 edge_points.points.push_back(pcn.points[i]);
             }
         }

@@ -19,7 +19,7 @@ class LOAM():
     def output(self, pcn):
         pcn = pcn[:,:3]
         pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T)
-        #pcn = self.feature_extraction.edge_points
+        #pcn = self.feature_extraction.plane_points
         
         return pcn
 
@@ -32,17 +32,22 @@ class FeatureExtraction():
         self.edge_points = []
         self.plane_points = []
         self.features = []
+        self.edge_points_index = []
+        self.plane_points_index = []
+        
         self.LEGO_cloudhandler = LEGO_cloudhandler()
     
     def process(self, pcn):
         self.processed_pcn = []
         self.edge_points = []
         self.plane_points = []
+        self.edge_points_index = []
+        self.plane_points_index = []
 
         """分割地面点"""
-        #pcn = self.LEGO_cloudhandler.pointcloudproject(pcn)
-        #pcn,self.ground_point_index = self.LEGO_cloudhandler.markground(pcn)
-        #self.ground_point = pcn[self.ground_point_index, :]
+        pcn = self.LEGO_cloudhandler.pointcloudproject(pcn)
+        pcn,self.ground_point_index = self.LEGO_cloudhandler.markground(pcn)
+        self.ground_point = pcn[self.ground_point_index, :]
 
         """分割地面点"""
         for i in range(pcn.shape[0]):
@@ -50,55 +55,19 @@ class FeatureExtraction():
                 self.processed_pcn.append(pcn[i])
 
         """提取竖线和平面"""
-        """   
-        for i in range(len(self.processed_pcn)):
-            x = self.processed_pcn[i][0]
-            y = self.processed_pcn[i][1]
-            z = self.processed_pcn[i][2]
-            
-            curv = 0
-            sum = [0, 0, 0]
-            
-            if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < len(self.processed_pcn))):
-                for j in range(5):
-                    next_index = i + 12 * j
-                    last_index = i - 12 * j
-                    sum[0] += (x - self.processed_pcn[last_index][0])
-                    sum[0] += (x - self.processed_pcn[next_index][0])
-                    sum[1] += (y - self.processed_pcn[last_index][1])
-                    sum[1] += (y - self.processed_pcn[next_index][1])
-                    sum[2] += (z - self.processed_pcn[last_index][2])
-                    sum[2] += (z - self.processed_pcn[next_index][2])
-
-                curv = sum[0] ** 2 + sum[1] ** 2 + sum[2] ** 2 
-                curv_list.append(curv)
-            
-            if not math.isnan(curv): 
-                if(curv < 100) & (curv > 0.2):
-                    #print("j1:", curv)
-                    self.edge_points.append(self.processed_pcn[i])
-                elif(curv < 2e-5) & (curv > 0):
-                    self.plane_points.append(self.processed_pcn[i])       
-        index = np.argsort(np.array(curv_list))
-        print(curv_list[index[0]])
-        index = np.flip(index)
-        for j in range(index.shape[0]):
-            if (not(math.isnan(curv_list[index[j]]))):
-                print("j2:", j)
-                print(curv_list[index[j]])
-                while(1): pass
-           
-        """
         for sector in range(6):
             curv_list = []
             for i in range(int(len(self.processed_pcn)/6)):
                 i = i + int(len(self.processed_pcn) / 6 ) * sector
+                
                 x = self.processed_pcn[i][0]
                 y = self.processed_pcn[i][1]
                 z = self.processed_pcn[i][2]
+                r0 = x**2 + y**2 + z**2
                 
                 curv = 0
                 sum = [0, 0, 0]
+                sum2 = 0
                 
                 if((i - 12 * 5 >= 0 ) & (i + 12 * 5 < len(self.processed_pcn))):
                     for j in range(5):
@@ -110,38 +79,70 @@ class FeatureExtraction():
                         sum[1] += (y - self.processed_pcn[next_index][1])
                         sum[2] += (z - self.processed_pcn[last_index][2])
                         sum[2] += (z - self.processed_pcn[next_index][2])
+                        
+                        sum2 += (x - self.processed_pcn[last_index][0])**2 + (y - self.processed_pcn[last_index][1])**2 + (z - self.processed_pcn[last_index][2])**2
+                        sum2 += (x - self.processed_pcn[next_index][0])**2 + (y - self.processed_pcn[next_index][1])**2 + (z - self.processed_pcn[next_index][2])**2
 
-                    curv = sum[0] ** 2 + sum[1] ** 2 + sum[2] ** 2 
-                    curv /= (x ** 2 + y ** 2 + z ** 2)
+                    curv = (sum[0] ** 2 + sum[1] ** 2 + sum[2] ** 2) / (sum2)
+                    
+                    next_index = i + 12 * 5
+                    last_index = i - 12 * 5
+                    rl = self.processed_pcn[last_index][0]**2 + self.processed_pcn[last_index][1]**2 + self.processed_pcn[last_index][2]**2
+                    rn = self.processed_pcn[next_index][0]**2 + self.processed_pcn[next_index][1]**2 + self.processed_pcn[next_index][2]**2
+                    if (abs(rl - r0) / r0 > 0.2) or (abs(rn - r0) / r0 > 0.2):
+                        #self.edge_points.append(self.processed_pcn[i])
+                        curv = nan
+                        
                     curv_list.append(curv)
                     
             index = np.argsort(np.array(curv_list))
+            edge_index = []
+            plane_index = []
 
             for j in range(len(index)):
-                if curv_list[index[j]] > 0:
-                    plane_index = index[j:j + 20]
+                if (len(plane_index) >= 20):
                     break
+                if curv_list[index[j]] > 0:
+                    flag = 1
+                    for k in range(5):
+                        if (index[j] + k < len(curv_list)):
+                            if (curv_list[index[j]] > curv_list[index[j] + k]): flag = 0
+                        if (index[j] - k > 0):
+                            if (curv_list[index[j]] > curv_list[index[j] - k]): flag = 0
+                    if (flag == 1):
+                        plane_index.append(index[j])
                 
             index = np.flipud(index)
             for j in range(len(index)):
-                if ((not(math.isnan(curv_list[index[j]]))) & (curv_list[index[j]] < 10)):
-                    edge_index = index[j:j + 20]
+                if (len(edge_index) >= 20):
                     break
+                if ((not(math.isnan(curv_list[index[j]]))) & (curv_list[index[j]] < 100)):
+                    flag = 1
+                    for k in range(5):
+                        if (index[j] + k < len(curv_list)):
+                            if (curv_list[index[j]] < curv_list[index[j] + k]): flag = 0
+                        if (index[j] - k > 0):
+                            if (curv_list[index[j]] < curv_list[index[j] - k]): flag = 0
+                    if (flag == 1):
+                        edge_index.append(index[j])
             
             for ind in edge_index:
                 ind += int(len(self.processed_pcn) / 6 ) * sector
                 if sector == 0:
                     ind += 12 * 5
                 self.edge_points.append(self.processed_pcn[ind])
+                self.edge_points_index.append(ind)
+
             for ind in plane_index:
                 ind += int(len(self.processed_pcn) / 6 ) * sector
                 if sector == 0:
                     ind += 12 * 5
                 self.plane_points.append(self.processed_pcn[ind])
+                self.plane_points_index.append(ind)
          
         self.edge_points = np.array(self.edge_points)
         self.plane_points = np.array(self.plane_points)
-        self.features = [self.edge_points, self.plane_points]
+        self.features = [self.edge_points, self.plane_points, self.edge_points_index, self.plane_points_index]
         
         return 1
 
@@ -188,8 +189,8 @@ class LidarOdometry():
     
     def matching(self, features, T):
         """特征点匹配"""
-        [edge_points, plane_points] = features
-        [last_edge_points, last_plane_points] = self.last_features
+        [self.edge_points, self.plane_points, self.edge_points_index, self.plane_points_index] = features
+        [last_edge_points, last_plane_points, _, _] = self.last_features
         
         raw_edge_points = edge_points
         raw_plane_points = plane_points
