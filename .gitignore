@@ -4,4 +4,4 @@ build/
 .vscode/
 src/bynav/bynav/__pycache__
 /root/washing_house/src/bynav/bynav/__pycache__/point_cloud.cpython-38.pyc
-/bag
+/bag/kt.db3
