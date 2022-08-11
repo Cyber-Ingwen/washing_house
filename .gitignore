@@ -3,5 +3,4 @@ install/
 build/
 .vscode/
 src/bynav/bynav/__pycache__
-src/bynav/bynav/__pycache__/point_cloud.cpython-38.pyc
-bag/
+/root/washing_house/src/bynav/bynav/__pycache__/point_cloud.cpython-38.pyc

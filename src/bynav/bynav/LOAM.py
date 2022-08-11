@@ -11,6 +11,7 @@ class LOAM():
     def __init__(self):
         self.feature_extraction = FeatureExtraction()
         self.lidar_odometry = LidarOdometry()
+        self.map = Map()
 
     def input(self, data):
         self.feature_extraction.process(data)
@@ -18,9 +19,14 @@ class LOAM():
     
     def output(self, pcn):
         pcn = pcn[:,:3]
-        pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T)
-        #pcn = self.feature_extraction.plane_points
-        
+        pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T) #通过T（有R，t的属性），使点（我们用特征点）做变换
+        #pcn = self.map.input(self.feature_extraction.features)
+        #pcn = self.map.process(self.feature_extraction.features)
+        #pcn = self.feature_extraction.allpiont
+        T_list = self.lidar_odometry.T_list
+        pcn = self.map.output(self.feature_extraction.allpiont, T_list)
+        print(pcn.shape)
+        #pcn = self.feature_extraction.ground_point
         return pcn
 
 
@@ -36,8 +42,10 @@ class FeatureExtraction():
         self.plane_points_index = []
         
         self.LEGO_cloudhandler = LEGO_cloudhandler()
+        self.allpiont = []
     
     def process(self, pcn):
+        self.allpiont = pcn
         self.processed_pcn = []
         self.edge_points = []
         self.plane_points = []
@@ -183,7 +191,7 @@ class LidarOdometry():
             if np.linalg.norm(f)<10:
                 break
             
-        self.T_list.append(x)
+        self.T_list.append(x)   #调用最后一位即可
         
         return 1
     
@@ -331,7 +339,7 @@ class LidarOdometry():
         
         return t
     
-    def transform(self, x, T):
+    def transform(self, x, T):  #通过T（有R，t的属性）,6自由度属性，使点（我们用特征点）做变换
         R = self._get_R(T)
         t = self._get_t(T)
         x_vect, x_label = x[:,:3], x[:,3:]
@@ -526,3 +534,55 @@ class LEGO_cloudhandler():
         #print(self.lablematrix)
         return self.lablematrix
     
+class Map():
+    """
+    环境建图
+    """
+    def __init__(self):
+        self.last_features = []
+        self.init_flag = 0
+        self.allpiont_save = []
+        self.lidar_odometry = LidarOdometry()
+        pass
+
+    def input(self,features):
+        self.features = features    #features包含两种特征点的数据(2*n*5)
+        return self.features[0]
+    
+    def output(self, allpiont, T_list):
+        if self.init_flag == 0:
+            self.allpiont_save = allpiont
+            self.init_flag = 1
+
+        elif self.init_flag == 1:
+            allpiont = self.lidar_odometry.transform(allpiont, T_list[-1])
+            self.allpiont_save = np.append(self.allpiont_save,allpiont,axis=0)
+            
+        return self.allpiont_save  
+
+    def process(self, features):
+        """主程序"""
+        if self.init_flag == 0:
+            self.last_features = features
+            self.init_flag = 1
+            self.last_edge_points = self.last_features[0] 
+
+        elif self.init_flag == 1:
+            self.transformAssociateToMap(features)
+
+        return self.last_edge_points         
+        
+    def transformAssociateToMap(self,features):
+        self.edge_points = features[0]  #(1xxx, 5)
+        self.plane_points = features[1] #(1xxx, 5)
+
+        self.last_edge_points = self.last_features[0]  #(1xxx, 5)
+        self.last_plane_points = self.last_features[1]
+
+        #处理的代码
+        self.last_edge_points = np.append(self.edge_points,self.last_edge_points,axis=0)
+        self.last_features[0] = self.last_edge_points
+        self.last_plane_points = np.append(self.plane_points,self.last_plane_points,axis=0)
+        self.last_features[1] = self.last_plane_points
+
+        
