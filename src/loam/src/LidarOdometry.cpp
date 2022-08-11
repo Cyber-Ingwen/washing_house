@@ -7,9 +7,6 @@
 using namespace Eigen;
 using namespace std;
 
-#include <ctime>
-
-clock_t t0, t1;
 
 LidarOdometry::LidarOdometry()
 {
@@ -35,63 +32,138 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
     }
 
     /* 提取竖线和平面 */
-    for (int i = 0; i < pcn.points.size(); i++)
+    for (int sector = 0; sector < 6; sector++)
     {
-        float x = pcn.points[i].x;
-        float y = pcn.points[i].y;
-        float z = pcn.points[i].z;
-        float r0 = x*x + y*y + z*z;
+        vector<float> curv_list;
 
-        float curv = 0;
-        float sum[3] = {0, 0, 0};
-        float sum2 = 0;
-
-        if((i - 12 * 5 >= 0 ) && (i + 12 * 5 < pcn.points.size()))
+        for (int i = 0; i < int(pcn.points.size() / 6); i++)
         {
-            for (int j = 0; j < 5; j++)
+            i = i + int(pcn.points.size() / 6) * sector;
+            float x = pcn.points[i].x;
+            float y = pcn.points[i].y;
+            float z = pcn.points[i].z;
+            float r0 = x*x + y*y + z*z;
+
+            float curv = 0;
+            float sum[3] = {0, 0, 0};
+            float sum2 = 0;
+
+            if((i - 12 * 5 >= 0 ) && (i + 12 * 5 < pcn.points.size()))
             {
-                int next_index = i + 12 * j;
-                int last_index = i - 12 * j;
-                sum[0] += (x - pcn.points[last_index].x);
-                sum[0] += (x - pcn.points[next_index].x);
-                sum[1] += (y - pcn.points[last_index].y);
-                sum[1] += (y - pcn.points[next_index].y);
-                sum[2] += (z - pcn.points[last_index].z);
-                sum[2] += (z - pcn.points[next_index].z);
+                for (int j = 0; j < 5; j++)
+                {
+                    int next_index = i + 12 * j;
+                    int last_index = i - 12 * j;
+                    sum[0] += (x - pcn.points[last_index].x);
+                    sum[0] += (x - pcn.points[next_index].x);
+                    sum[1] += (y - pcn.points[last_index].y);
+                    sum[1] += (y - pcn.points[next_index].y);
+                    sum[2] += (z - pcn.points[last_index].z);
+                    sum[2] += (z - pcn.points[next_index].z);
 
-                sum2 += (x - pcn.points[last_index].x) * (x - pcn.points[last_index].x) + (y - pcn.points[last_index].y) * (y - pcn.points[last_index].y) + (z - pcn.points[last_index].z) * (z - pcn.points[last_index].z);
-                sum2 += (x - pcn.points[next_index].x) * (x - pcn.points[next_index].x) + (y - pcn.points[next_index].y) * (y - pcn.points[next_index].y) + (z - pcn.points[next_index].z) * (z - pcn.points[next_index].z);
-            }
+                    sum2 += (x - pcn.points[last_index].x) * (x - pcn.points[last_index].x) + (y - pcn.points[last_index].y) * (y - pcn.points[last_index].y) + (z - pcn.points[last_index].z) * (z - pcn.points[last_index].z);
+                    sum2 += (x - pcn.points[next_index].x) * (x - pcn.points[next_index].x) + (y - pcn.points[next_index].y) * (y - pcn.points[next_index].y) + (z - pcn.points[next_index].z) * (z - pcn.points[next_index].z);
+                }
 
-            curv = (sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / (sum2);
+                curv = (sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / (sum2);
 
-            int next_index = i + 12 * 5;
-            int last_index = i - 12 * 5;
-            float rl = pcn.points[last_index].x * pcn.points[last_index].x + pcn.points[last_index].y * pcn.points[last_index].y + pcn.points[last_index].z * pcn.points[last_index].z;
-            float rn = pcn.points[next_index].x * pcn.points[next_index].x + pcn.points[next_index].y * pcn.points[next_index].y + pcn.points[next_index].z * pcn.points[next_index].z;
-            if ((abs(rl - r0) / r0 > 0.2) || (abs(rn - r0) / r0 > 0.2))
-            {
-                curv = -1;
+                int next_index = i + 12 * 5;
+                int last_index = i - 12 * 5;
+                float rl = pcn.points[last_index].x * pcn.points[last_index].x + pcn.points[last_index].y * pcn.points[last_index].y + pcn.points[last_index].z * pcn.points[last_index].z;
+                float rn = pcn.points[next_index].x * pcn.points[next_index].x + pcn.points[next_index].y * pcn.points[next_index].y + pcn.points[next_index].z * pcn.points[next_index].z;
+                if ((abs(rl - r0) / r0 > 0.2) || (abs(rn - r0) / r0 > 0.2))
+                {
+                    curv = -1;
+                }
+
+                curv_list.push_back(curv);
             }
         }
 
-        if((curv < 100) && (curv > 0.2))
+        vector<int> index(curv_list.size());
+        auto rule = [curv_list](float a, float b) -> bool{return curv_list[a] < curv_list[b];};
+        sort(index.begin(), index.end(), rule);
+
+        vector<int> plane_index, edge_index;
+
+        for (int j = 0; j < index.size(); j++)
         {
-            if(rand() % 10 > 5)
+            if (plane_index.size() >= 20)
             {
-                pcn.points[i].intensity = curv;
-                edge_points.points.push_back(pcn.points[i]);
+                break;
+            }
+            if (curv_list[index[j]] > 0)
+            {
+                int flag = 1;
+                for (int k = 0; k < 5; k++)
+                {
+                    if (index[j] + k < curv_list.size())
+                    {
+                        if (curv_list[index[j]] > curv_list[index[j] + k]) {flag = 0;}
+                    }
+                    if (index[j] - k > 0)
+                    {
+                        if (curv_list[index[j]] > curv_list[index[j] - k]) {flag = 0;}
+                    }
+                }
+                if (flag == 1)
+                {
+                    plane_index.push_back(index[j]);
+                }
             }
         }
-        else if((curv < 2e-5) && (curv > 0))
+
+        reverse(index.begin(), index.end());
+        for (int j = 0; j < index.size(); j++)
         {
-            if(rand() % 10 > 8)
+            if (edge_index.size() >= 20)
             {
-                plane_points.points.push_back(pcn.points[i]);
+                break;
             }
+            if (curv_list[index[j]] < 100)
+            {
+                int flag = 1;
+                for (int k = 0; k < 5; k++)
+                {
+                    if (index[j] + k < curv_list.size())
+                    {
+                        if (curv_list[index[j]] < curv_list[index[j] + k]) {flag = 0;}
+                    }
+                    if (index[j] - k > 0)
+                    {
+                        if (curv_list[index[j]] < curv_list[index[j] - k]) {flag = 0;}
+                    }
+                }
+                if (flag == 1)
+                {
+                    edge_index.push_back(index[j]);
+                }
+            }
+        }
+
+        for (int ind : plane_index)
+        {
+            ind += int(pcn.points.size() / 6) * sector;
+            if (sector == 0)
+            {
+                ind += 12 * 5;
+            }
+            pcn.points[ind].intensity = ind;
+            plane_points.points.push_back(pcn.points[ind]);
+        }
+
+        for (int ind : edge_index)
+        {
+            ind += int(pcn.points.size() / 6) * sector;
+            if (sector == 0)
+            {
+                ind += 12 * 5;
+            }
+            pcn.points[ind].intensity = ind;
+            edge_points.points.push_back(pcn.points[ind]);
         }
     }
-
+    
     last_pcn = pcn;
     last_edge_points = edge_points;
     last_plane_points = plane_points;

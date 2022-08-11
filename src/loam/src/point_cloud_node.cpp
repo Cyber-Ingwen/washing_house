@@ -6,7 +6,9 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "LidarOdometry.hpp"
+#include <ctime>
 
+clock_t t0, t1;
 
 class point_cloud_node: public rclcpp::Node
 {
@@ -40,18 +42,23 @@ class point_cloud_node: public rclcpp::Node
             pcl::fromROSMsg(*msg_ptr, *cloud);
 
             /*运行算法*/
-            
+            t0 = clock();
             lidar_odometry.feature_extraction(*cloud);
             //lidar_odometry.NewtonGussian();
-            *cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
-            
-            //cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
+            //*cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
+            t1 = clock();
+            double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;
+            cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
 
             /*可视化点云*/
-            //auto ptr = cloud;
             auto ptr = lidar_odometry.edge_points.makeShared();
-            pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
+            auto ptr2 = cloud;
+            //pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> rgb(ptr2, 155, 155, 155);
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity(ptr, 255, 0, 0);
+	
             visualizer->removeAllPointClouds();
+            visualizer->addPointCloud(ptr2, rgb, "2", 0);
             visualizer->addPointCloud(ptr, intensity, viz_name, 0);
             visualizer->spinOnce(0.001);
         }
