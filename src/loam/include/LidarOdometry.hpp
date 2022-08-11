@@ -32,5 +32,8 @@ class LidarOdometry
         pcl::PointCloud<pcl::PointXYZI> transform(pcl::PointCloud<pcl::PointXYZI> cloud, float *T);
         VectorXf _get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, float *T);
         VectorXf _get_jacobi_plane(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4, float *T);
+
+        pcl::PointCloud<pcl::PointXYZI> test_point_1;
+        pcl::PointCloud<pcl::PointXYZI> test_point_2;
 };
 

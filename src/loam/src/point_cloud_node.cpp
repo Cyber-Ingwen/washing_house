@@ -44,7 +44,7 @@ class point_cloud_node: public rclcpp::Node
             /*运行算法*/
             t0 = clock();
             lidar_odometry.input(cloud);
-            *cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
+            //*cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
             
             t1 = clock();
             double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;

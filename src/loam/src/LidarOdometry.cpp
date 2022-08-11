@@ -18,12 +18,21 @@ int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
     if (init_flag == 0)
     {
         this->feature_extraction(*cloud_ptr);
+
+        last_edge_points = edge_points;
+        last_plane_points = plane_points;
+        last_pcn = pcn;
+
         init_flag = 1;
     }
     else if (init_flag == 1)
     {
         this->feature_extraction(*cloud_ptr);
         this->NewtonGussian();
+
+        last_edge_points = edge_points;
+        last_plane_points = plane_points;
+        last_pcn = pcn;
     }
 
     return 1;
@@ -34,9 +43,6 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
     pcn.clear();
     edge_points.clear();
     plane_points.clear();
-    last_pcn.clear();
-    last_edge_points.clear();
-    last_plane_points.clear();
 
     /* 分割地面点 */
     for (int i = 0; i < cloud.points.size(); i++)
@@ -180,10 +186,6 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
             edge_points.points.push_back(pcn.points[ind]);
         }
     }
-    
-    last_pcn = pcn;
-    last_edge_points = edge_points;
-    last_plane_points = plane_points;
 
     return 1;
 }
@@ -219,6 +221,8 @@ int LidarOdometry::matching(float *T)
     /* 特征点匹配 */
     J = MatrixXf::Zero(6, edge_points.points.size() + plane_points.points.size());
     F = VectorXf::Zero(edge_points.points.size() + plane_points.points.size());
+
+    auto last_pcn_matrix = last_pcn.getMatrixXfMap(3, 8, 0);
     
     /* 边缘点匹配 */
     auto raw_edge_points = edge_points;
@@ -231,7 +235,7 @@ int LidarOdometry::matching(float *T)
     for (int i = 0; i < edge_points.points.size(); i++)
     {
         Vector3f edge_point = edge_points_matrix.col(i);
-        VectorXf distance_vect(edge_points.points.size());
+        VectorXf distance_vect(last_edge_points.points.size());
 
         for (int j = 0; j < last_edge_points.points.size(); j++)
         {
@@ -244,25 +248,36 @@ int LidarOdometry::matching(float *T)
         auto rule = [distance_vect](float a, float b) -> bool{return distance_vect(a) < distance_vect(b);};
         sort(index.data(), index.data() + index.size(), rule);
 
-        int near_angle_index;
-        int nearest_index = index(0);
-        if ((nearest_index - 1) >= 0)
+        int nearest_index, near_angle_index;
+        nearest_index = raw_edge_points.points[index(0)].intensity;
+        
+        if ((nearest_index % 12 == 3) && (nearest_index + 8 < last_pcn.points.size()))
+        {
+            near_angle_index = nearest_index + 8;
+        }
+        else if ((nearest_index % 12 == 11) && (nearest_index - 1 >= 0))
         {
             near_angle_index = nearest_index - 1;
         }
-        else
+        else if (near_angle_index = nearest_index + 1 < last_pcn.points.size())
         {
             near_angle_index = nearest_index + 1;
         }
+        else{cout<<"FBI WARNING"<<endl;}
         
         Vector3f p1 = raw_edge_points_matrix.col(i);
-        Vector3f p2 = last_edge_points_matrix.col(nearest_index);
-        Vector3f p3 = last_edge_points_matrix.col(near_angle_index);
+        Vector3f p2 = last_pcn_matrix.col(nearest_index);
+        Vector3f p3 = last_pcn_matrix.col(near_angle_index);
+
+        if (isnan(p2(0))){cout<<"WARNING"<<endl;}
+        if (isnan(p3(0))){cout<<"WARNING"<<endl;}
+
         float d = (p2 - p3).norm();
         float s = ((p2 - edge_point).cross(p3 - edge_point)).norm();
         float h = (s / d);
 
         J.col(i) = this->_get_jacobi_edge(p1, p2, p3, T);
+        cout<<"j:"<<J.col(i)<<endl;
         F(i) = h;
     }
 
@@ -291,30 +306,36 @@ int LidarOdometry::matching(float *T)
         sort(index.data(), index.data() + index.size(), rule);
 
         int nearest_index, near_angle_index, near_scan_index;
-        nearest_index = index(0);
+        nearest_index = plane_points.points[index(0)].intensity;
 
-        if ((nearest_index - 1) >= 0)
+        if ((nearest_index % 12 == 3) && (nearest_index + 8 < last_pcn.points.size()))
+        {
+            near_angle_index = nearest_index + 8;
+        }
+        else if ((nearest_index % 12 == 11) && (nearest_index - 1 >= 0))
         {
             near_angle_index = nearest_index - 1;
         }
-        else
+        else if (near_angle_index = nearest_index + 1 < last_pcn.points.size())
         {
             near_angle_index = nearest_index + 1;
         }
+        else{cout<<"FBI WARNING"<<endl;}
 
-        if ((nearest_index - 2) >= 0)
+        if (nearest_index - 12 >= 0)
         {
-            near_scan_index = nearest_index - 2;
+            near_scan_index = nearest_index - 12;
         }
-        else
+        else if (nearest_index + 12 < last_pcn.points.size())
         {
-            near_scan_index = nearest_index + 2;
+            near_scan_index = nearest_index + 12;
         }
+        else{cout<<"FBI WARNING"<<endl;}
         
         Vector3f p1 = raw_plane_points_matrix.col(i);
-        Vector3f p2 = last_plane_points_matrix.col(nearest_index);
-        Vector3f p3 = last_plane_points_matrix.col(near_angle_index);
-        Vector3f p4 = last_plane_points_matrix.col(near_scan_index);
+        Vector3f p2 = last_pcn_matrix.col(nearest_index);
+        Vector3f p3 = last_pcn_matrix.col(near_angle_index);
+        Vector3f p4 = last_pcn_matrix.col(near_scan_index);
 
         Vector3f s = (p2 - p3).cross(p2 - p4);
         float h = (p2 - plane_point).dot(s / s.norm());
