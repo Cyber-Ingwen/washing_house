@@ -21,8 +21,10 @@ class LidarOdometry
         MatrixXf J;
         VectorXf F;
         float T[6];
+        int init_flag;
 
         LidarOdometry();
+        int input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr);
         int feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
         int NewtonGussian(void);
 

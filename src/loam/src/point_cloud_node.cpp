@@ -43,9 +43,9 @@ class point_cloud_node: public rclcpp::Node
 
             /*运行算法*/
             t0 = clock();
-            lidar_odometry.feature_extraction(*cloud);
-            //lidar_odometry.NewtonGussian();
-            //*cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
+            lidar_odometry.input(cloud);
+            *cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
+            
             t1 = clock();
             double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;
             cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
@@ -53,14 +53,19 @@ class point_cloud_node: public rclcpp::Node
             /*可视化点云*/
             auto ptr = lidar_odometry.edge_points.makeShared();
             auto ptr2 = cloud;
+            auto ptr3 = lidar_odometry.plane_points.makeShared();;
+
             //pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> rgb(ptr2, 155, 155, 155);
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity(ptr, 255, 0, 0);
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity2(ptr3, 0, 255, 0);
 
             visualizer->removeAllPointClouds();
             visualizer->addPointCloud(ptr2, rgb, "raw cloud", 0);
             visualizer->addPointCloud(ptr, intensity, viz_name, 0);
+            visualizer->addPointCloud(ptr3, intensity2, "3", 0);
             visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viz_name);
+            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "3");
             visualizer->spinOnce(0.001);
         }
 };

@@ -10,7 +10,23 @@ using namespace std;
 
 LidarOdometry::LidarOdometry()
 {
+    init_flag = 0;
+}
 
+int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
+{
+    if (init_flag == 0)
+    {
+        this->feature_extraction(*cloud_ptr);
+        init_flag = 1;
+    }
+    else if (init_flag == 1)
+    {
+        this->feature_extraction(*cloud_ptr);
+        this->NewtonGussian();
+    }
+
+    return 1;
 }
 
 int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
