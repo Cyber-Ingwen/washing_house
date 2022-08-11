@@ -45,6 +45,7 @@ Rawdata from LIDAR can be published by:
 
 ```sh
 ros2 bag play -l bag/bag.db3
+ros2 bag play -l bag/rosbag2_2022_08_11-09_11_08_0.db3
 ros2 run bynav point_cloud_node
 ```
 
@@ -59,5 +60,5 @@ https://mobaxterm.mobatek.net/
 export display by:
 
 ```sh
-export DISPLAY=172.16.197.29:0.0       
+export DISPLAY=172.16.196.215:0.0     
 ```
