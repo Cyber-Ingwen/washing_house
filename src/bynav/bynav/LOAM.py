@@ -197,7 +197,7 @@ class LidarOdometry():
     
     def matching(self, features, T):
         """特征点匹配"""
-        [self.edge_points, self.plane_points, self.edge_points_index, self.plane_points_index] = features
+        [edge_points, plane_points, self.edge_points_index, self.plane_points_index] = features
         [last_edge_points, last_plane_points, _, _] = self.last_features
         
         raw_edge_points = edge_points
@@ -264,6 +264,32 @@ class LidarOdometry():
                 print("h==Nan")
             
         return F.reshape((n, 1)), J.reshape((n, 6))
+    
+    def matching2(self, features, T):
+        """特征点匹配"""
+        last_edge_points = []
+        last_edge_points_index = []
+        raw_edge_points = edge_points
+        raw_plane_points = plane_points
+        edge_points = self.transform(edge_points, T)
+        plane_points = self.transform(plane_points, T)
+        
+        n = edge_points.shape[0]
+        n = edge_points.shape[0] + plane_points.shape[0]
+        F, J = np.zeros(n),  np.zeros((n, 6))
+        
+        for i in range(edge_points.shape[0]):
+            edge_point = edge_points[i][:3]
+            last_points = last_edge_points[:,:3]
+            
+            distance = np.linalg.norm(last_points - edge_point, axis = 1)
+            nearest_index = np.argmax(-distance)
+            nearest_index = last_edge_points_index[nearest_index]
+            near_angle_index = (nearest_index - 1) if (nearest_index - 1) >= 0 else (nearest_index + 1)
+            
+            
+                
+        
         
     def _get_jacobi_edge(self, p1, p2, p3, T):
         [x_1, y_1, z_1], [x_2, y_2, z_2], [x_3, y_3, z_3] = p1, p2, p3
