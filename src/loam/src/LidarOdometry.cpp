@@ -87,6 +87,7 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 
                 curv = (sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / (sum2);
                 if (isnan(curv)){ curv = -1;}
+                if (r0 < 10){ curv = -1;}
 
                 int next_index = i + 12 * 5;
                 int last_index = i - 12 * 5;
@@ -139,7 +140,7 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
         reverse(index.begin(), index.end());
         for (int j = 0; j < index.size(); j++)
         {
-            if (edge_index.size() >= 20)
+            if (edge_index.size() >= 30)
             {
                 break;
             }
@@ -195,14 +196,14 @@ int LidarOdometry::NewtonGussian(void)
     /* 牛顿高斯法优化 */
     float x[6] = {0.1, 0.1, 0.1, 1.0, 1.0, 1.0};
     cout << "__________" << endl;
-    for (int num = 0; num < 3; num++)
+    for (int num = 0; num < 4; num++)
     {
         this->matching(x);
 
-        MatrixXf temp = ((J * J.transpose() + 1e-2 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
+        MatrixXf temp = ((J * J.transpose() + 1e-3 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
         VectorXf x_vect(6);
         x_vect << x[0], x[1], x[2], x[3], x[4], x[5];
-        x_vect = x_vect.matrix() - 3 * temp;
+        x_vect = x_vect.matrix() - 1 * temp;
         x[0] = x_vect(0);
         x[1] = x_vect(1);
         x[2] = x_vect(2);
@@ -211,6 +212,8 @@ int LidarOdometry::NewtonGussian(void)
         x[5] = x_vect(5);
 
         memcpy(T, x, sizeof(x));
+
+        cout << "x: " << x_vect.norm() << " f: " << F.norm() << endl;
     }
 
     return 1;
@@ -221,7 +224,6 @@ int LidarOdometry::matching(float *T)
     /* 特征点匹配 */
     J = MatrixXf::Zero(6, edge_points.points.size() + plane_points.points.size());
     F = VectorXf::Zero(edge_points.points.size() + plane_points.points.size());
-
     auto last_pcn_matrix = last_pcn.getMatrixXfMap(3, 8, 0);
     
     /* 边缘点匹配 */
@@ -231,7 +233,7 @@ int LidarOdometry::matching(float *T)
     edge_points = this->transform(edge_points, T);
     auto edge_points_matrix = edge_points.getMatrixXfMap(3, 8, 0);
     auto last_edge_points_matrix = last_edge_points.getMatrixXfMap(3, 8, 0);
-
+    
     for (int i = 0; i < edge_points.points.size(); i++)
     {
         Vector3f edge_point = edge_points_matrix.col(i);
@@ -249,36 +251,30 @@ int LidarOdometry::matching(float *T)
         sort(index.data(), index.data() + index.size(), rule);
 
         int nearest_index, near_angle_index;
-        nearest_index = raw_edge_points.points[index(0)].intensity;
-        
-        if ((nearest_index % 12 == 3) && (nearest_index + 8 < last_pcn.points.size()))
-        {
-            near_angle_index = nearest_index + 8;
-        }
-        else if ((nearest_index % 12 == 11) && (nearest_index - 1 >= 0))
-        {
-            near_angle_index = nearest_index - 1;
-        }
-        else if (near_angle_index = nearest_index + 1 < last_pcn.points.size())
-        {
-            near_angle_index = nearest_index + 1;
-        }
-        else{cout<<"FBI WARNING"<<endl;}
+        nearest_index = index(0);
+        near_angle_index = index(1);
         
         Vector3f p1 = raw_edge_points_matrix.col(i);
-        Vector3f p2 = last_pcn_matrix.col(nearest_index);
-        Vector3f p3 = last_pcn_matrix.col(near_angle_index);
-
-        if (isnan(p2(0))){cout<<"WARNING"<<endl;}
-        if (isnan(p3(0))){cout<<"WARNING"<<endl;}
+        Vector3f p2 = last_edge_points_matrix.col(nearest_index);
+        Vector3f p3 = last_edge_points_matrix.col(near_angle_index);
 
         float d = (p2 - p3).norm();
         float s = ((p2 - edge_point).cross(p3 - edge_point)).norm();
         float h = (s / d);
 
         J.col(i) = this->_get_jacobi_edge(p1, p2, p3, T);
-        cout<<"j:"<<J.col(i)<<endl;
         F(i) = h;
+
+        if (isnan(h)){cout<<"WARNING H"<<endl;}
+        if (isnan((J.col(i))(0))){cout<<"WARNING J"<<endl;}
+
+        if (test_flag == 0)
+        {
+            test_point_1.push_back(raw_edge_points.points[i]);
+            test_point_2.push_back(last_edge_points.points[nearest_index]);
+            test_point_2.push_back(last_edge_points.points[near_angle_index]);
+            test_flag = 1;
+        }
     }
 
     /* 平面点匹配 */
@@ -292,7 +288,7 @@ int LidarOdometry::matching(float *T)
     for (int i = 0; i < plane_points.points.size(); i++)
     {
         Vector3f plane_point = plane_points_matrix.col(i);
-        VectorXf distance_vect(plane_points.points.size());
+        VectorXf distance_vect(last_plane_points.points.size());
 
         for (int j = 0; j < last_plane_points.points.size(); j++)
         {
@@ -306,43 +302,27 @@ int LidarOdometry::matching(float *T)
         sort(index.data(), index.data() + index.size(), rule);
 
         int nearest_index, near_angle_index, near_scan_index;
-        nearest_index = plane_points.points[index(0)].intensity;
-
-        if ((nearest_index % 12 == 3) && (nearest_index + 8 < last_pcn.points.size()))
-        {
-            near_angle_index = nearest_index + 8;
-        }
-        else if ((nearest_index % 12 == 11) && (nearest_index - 1 >= 0))
-        {
-            near_angle_index = nearest_index - 1;
-        }
-        else if (near_angle_index = nearest_index + 1 < last_pcn.points.size())
-        {
-            near_angle_index = nearest_index + 1;
-        }
-        else{cout<<"FBI WARNING"<<endl;}
-
-        if (nearest_index - 12 >= 0)
-        {
-            near_scan_index = nearest_index - 12;
-        }
-        else if (nearest_index + 12 < last_pcn.points.size())
-        {
-            near_scan_index = nearest_index + 12;
-        }
-        else{cout<<"FBI WARNING"<<endl;}
+        nearest_index = index(0);
+        near_angle_index = index(1);
+        near_scan_index = index(2);
         
         Vector3f p1 = raw_plane_points_matrix.col(i);
-        Vector3f p2 = last_pcn_matrix.col(nearest_index);
-        Vector3f p3 = last_pcn_matrix.col(near_angle_index);
-        Vector3f p4 = last_pcn_matrix.col(near_scan_index);
+        Vector3f p2 = last_plane_points_matrix.col(nearest_index);
+        Vector3f p3 = last_plane_points_matrix.col(near_angle_index);
+        Vector3f p4 = last_plane_points_matrix.col(near_scan_index);
 
         Vector3f s = (p2 - p3).cross(p2 - p4);
         float h = (p2 - plane_point).dot(s / s.norm());
 
         J.col(edge_points.points.size() + i) = this->_get_jacobi_plane(p1, p2, p3, p4, T);
         F(edge_points.points.size() + i) = h;
+
+        if (isnan(h)){cout<<"WARNING PL H"<<endl;}
+        if (isnan((J.col(i))(0))){cout<<"WARNING PL J"<<endl;}
     }
+
+    edge_points = raw_edge_points;
+    plane_points = raw_plane_points;
 
     return 1;
 }

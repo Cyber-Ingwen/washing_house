@@ -35,5 +35,6 @@ class LidarOdometry
 
         pcl::PointCloud<pcl::PointXYZI> test_point_1;
         pcl::PointCloud<pcl::PointXYZI> test_point_2;
+        int test_flag;
 };
 
