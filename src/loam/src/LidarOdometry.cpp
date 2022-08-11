@@ -194,13 +194,13 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 int LidarOdometry::NewtonGussian(void)
 {
     /* 牛顿高斯法优化 */
-    float x[6] = {0.1, 0.1, 0.1, 1.0, 1.0, 1.0};
+    float x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     cout << "__________" << endl;
     for (int num = 0; num < 4; num++)
     {
         this->matching(x);
 
-        MatrixXf temp = ((J * J.transpose() + 1e-3 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
+        MatrixXf temp = ((J * J.transpose() + 1e-6 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
         VectorXf x_vect(6);
         x_vect << x[0], x[1], x[2], x[3], x[4], x[5];
         x_vect = x_vect.matrix() - 1 * temp;
@@ -214,6 +214,7 @@ int LidarOdometry::NewtonGussian(void)
         memcpy(T, x, sizeof(x));
 
         cout << "x: " << x_vect.norm() << " f: " << F.norm() << endl;
+        if (F.norm() < 10) {break;}
     }
 
     return 1;
