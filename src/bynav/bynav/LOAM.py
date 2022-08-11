@@ -468,7 +468,6 @@ class Map():
             self.init_flag = 1
 
         elif self.init_flag == 1:
-            
             allpiont = self.lidar_odometry.transform(allpiont, T_list[-1])
             self.allpiont_save = np.append(self.allpiont_save,allpiont,axis=0)
             
