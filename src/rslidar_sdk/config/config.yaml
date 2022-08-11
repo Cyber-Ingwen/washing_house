@@ -14,7 +14,7 @@ lidar:
   - driver:
       lidar_type: RS16            #LiDAR type - RS16, RS32, RSBP, RS128, RS128_40, RS80, RSM1, RSHELIOS
       frame_id: /rslidar           #Frame id of message
-      msop_port: 6699              #Msop port of lidar
+      msop_port: 2244              #Msop port of lidar
       difop_port: 7788             #Difop port of lidar
       start_angle: 0               #Start angle of point cloud
       end_angle: 360               #End angle of point cloud 
