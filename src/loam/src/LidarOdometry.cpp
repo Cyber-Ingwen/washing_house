@@ -35,10 +35,8 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
     for (int sector = 0; sector < 6; sector++)
     {
         vector<float> curv_list;
-
-        for (int i = 0; i < int(pcn.points.size() / 6); i++)
+        for (int i = int(pcn.points.size() / 6) * sector; i < int(pcn.points.size() / 6) * (sector + 1); i++)
         {
-            i = i + int(pcn.points.size() / 6) * sector;
             float x = pcn.points[i].x;
             float y = pcn.points[i].y;
             float z = pcn.points[i].z;
@@ -66,6 +64,7 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
                 }
 
                 curv = (sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / (sum2);
+                if (isnan(curv)){ curv = -1;}
 
                 int next_index = i + 12 * 5;
                 int last_index = i - 12 * 5;
@@ -79,12 +78,14 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
                 curv_list.push_back(curv);
             }
         }
-
+        
         vector<int> index(curv_list.size());
-        auto rule = [curv_list](float a, float b) -> bool{return curv_list[a] < curv_list[b];};
+        for (int ind = 0; ind < curv_list.size(); ind++) {index[ind] = ind;}
+        auto rule = [curv_list](int a, int b) -> bool{return curv_list[a] < curv_list[b];};
         sort(index.begin(), index.end(), rule);
 
-        vector<int> plane_index, edge_index;
+        vector<int> plane_index; 
+        vector<int> edge_index;
 
         for (int j = 0; j < index.size(); j++)
         {
@@ -120,7 +121,7 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
             {
                 break;
             }
-            if (curv_list[index[j]] < 100)
+            if ((curv_list[index[j]] < 100) && (curv_list[index[j]] > 0))
             {
                 int flag = 1;
                 for (int k = 0; k < 5; k++)
