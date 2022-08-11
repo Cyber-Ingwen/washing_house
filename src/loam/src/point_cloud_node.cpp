@@ -56,10 +56,11 @@ class point_cloud_node: public rclcpp::Node
             //pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> rgb(ptr2, 155, 155, 155);
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity(ptr, 255, 0, 0);
-	
+
             visualizer->removeAllPointClouds();
-            visualizer->addPointCloud(ptr2, rgb, "2", 0);
+            visualizer->addPointCloud(ptr2, rgb, "raw cloud", 0);
             visualizer->addPointCloud(ptr, intensity, viz_name, 0);
+            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viz_name);
             visualizer->spinOnce(0.001);
         }
 };
