@@ -108,7 +108,7 @@ class FeatureExtraction():
             plane_index = []
 
             for j in range(len(index)):
-                if (len(plane_index) >= 20):
+                if (len(plane_index) >= 100):  #精准度&速度
                     break
                 if curv_list[index[j]] > 0:
                     flag = 1
@@ -121,8 +121,8 @@ class FeatureExtraction():
                         plane_index.append(index[j])
                 
             index = np.flipud(index)
-            for j in range(len(index)):
-                if (len(edge_index) >= 20):
+            for j in range(len(index)): 
+                if (len(edge_index) >= 100):  #精准度&速度
                     break
                 if ((not(math.isnan(curv_list[index[j]]))) & (curv_list[index[j]] < 100)):
                     flag = 1
@@ -541,6 +541,7 @@ class Map():
     def __init__(self):
         self.last_features = []
         self.init_flag = 0
+        self.t_flag = 1
         self.allpiont_save = []
         self.lidar_odometry = LidarOdometry()
         pass
@@ -555,9 +556,10 @@ class Map():
             self.init_flag = 1
 
         elif self.init_flag == 1:
-            allpiont = self.lidar_odometry.transform(allpiont, T_list[-1])
+            for i in range(self.t_flag):
+                allpiont = self.lidar_odometry.transform(allpiont, T_list[-i])
             self.allpiont_save = np.append(self.allpiont_save,allpiont,axis=0)
-            
+            self.t_flag += 1
         return self.allpiont_save  
 
     def process(self, features):
@@ -585,4 +587,11 @@ class Map():
         self.last_plane_points = np.append(self.plane_points,self.last_plane_points,axis=0)
         self.last_features[1] = self.last_plane_points
 
-        
+    def fuck():
+        self.laserCloudCenWidth = 10 #邻域宽度, cm为单位
+        self.laserCloudCenHeight = 5 #邻域高度
+        self.laserCloudCenDepth = 10 #邻域深度
+        self.laserCloudWidth = 21   #子cube沿宽方向的分割个数
+        self.laserCloudHeight = 11  #高方向个数
+        self.laserCloudDepth = 21   #深度方向个数
+        self.laserCloudNum = self.laserCloudWidth * self.laserCloudHeight * self.laserCloudDepth   #子cube总数        
