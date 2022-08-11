@@ -19,7 +19,6 @@ class LOAM():
     
     def output(self, pcn):
         pcn = pcn[:,:3]
-<<<<<<< HEAD
         pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T) #通过T（有R，t的属性），使点（我们用特征点）做变换
         #pcn = self.map.input(self.feature_extraction.features)
         #pcn = self.map.process(self.feature_extraction.features)
@@ -28,11 +27,6 @@ class LOAM():
         pcn = self.map.output(self.feature_extraction.allpiont, T_list)
         print(pcn.shape)
         #pcn = self.feature_extraction.ground_point
-=======
-        pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T)
-        #pcn = self.feature_extraction.plane_points
-        
->>>>>>> f0b7eb9874f5c473db3ee7b1ddbcd909b9286633
         return pcn
 
 
@@ -156,13 +150,8 @@ class FeatureExtraction():
          
         self.edge_points = np.array(self.edge_points)
         self.plane_points = np.array(self.plane_points)
-<<<<<<< HEAD
-        self.features = [self.edge_points, self.plane_points]  #features包含两种特征点的数据(2*n*5)
-    
-=======
         self.features = [self.edge_points, self.plane_points, self.edge_points_index, self.plane_points_index]
         
->>>>>>> f0b7eb9874f5c473db3ee7b1ddbcd909b9286633
         return 1
 
 
