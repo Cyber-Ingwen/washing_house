@@ -12,10 +12,20 @@ colcon build --symlink-install --parallel-workers 8
 source install/setup.bash
 echo source install/setup.bash >> ~/.bashrc
 ```
+Install Ceres
+```sh
+git clone https://github.com/ceres-solver/ceres-solver.git && \
+cd ceres-solver && \
+git checkout tags/2.1.0 && \
+mkdir build && cd build && \
+cmake .. && \
+make -j8 && \
+sudo make install && \
+```
 
+Install Open3D
 ```sh
 apt install pip
-pip install open3d
 pip install open3d
 ```
 
