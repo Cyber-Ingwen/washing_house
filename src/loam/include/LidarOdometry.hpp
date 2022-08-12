@@ -7,6 +7,7 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 using namespace Eigen;
+using namespace std;
 
 
 class LidarOdometry
@@ -36,5 +37,7 @@ class LidarOdometry
         pcl::PointCloud<pcl::PointXYZI> test_point_1;
         pcl::PointCloud<pcl::PointXYZI> test_point_2;
         int test_flag;
+
+        vector<float *> T_list;
 };
 

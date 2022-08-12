@@ -21,6 +21,7 @@ class point_cloud_node: public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_point_cloud;
 
         LidarOdometry lidar_odometry;
+        pcl::PointCloud<pcl::PointXYZI> full_cloud;
 
         point_cloud_node(std::string name): Node(name)
         {
@@ -33,6 +34,7 @@ class point_cloud_node: public rclcpp::Node
             /*配置可视化*/
             viz_name = "pcl cloud";
             visualizer = boost::make_shared<pcl::visualization::PCLVisualizer>(viz_name);
+            
         }
 
         void callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr)
@@ -43,33 +45,49 @@ class point_cloud_node: public rclcpp::Node
 
             /*运行算法*/
             t0 = clock();
+
             lidar_odometry.input(cloud);
-            pcl::PointCloud<pcl::PointXYZI> raw_cloud;
-            raw_cloud = *cloud;
-            *cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
+
+            /*
+            if (lidar_odometry.init_flag == 1)
+            {
+                for (int i = lidar_odometry.T_list.size() - 1; i >= 0; i--)
+                {
+                    cout << "_________i:" << i << endl;
+                    *cloud = lidar_odometry.transform(*cloud, lidar_odometry.T_list[i]);
+                }
+                
+                for (int i = 0; i < cloud->points.size(); i++)
+                {
+                    full_cloud.push_back(cloud->points[i]);
+                }
+            }
+            
+            */
+            full_cloud = lidar_odometry.transform(*cloud, lidar_odometry.T);
             
             t1 = clock();
             double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;
             cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
 
             /*可视化点云*/
-            //auto ptr = raw_cloud.makeShared();
-            auto ptr = lidar_odometry.edge_points.makeShared();
-            auto ptr2 = raw_cloud.makeShared();
-            auto ptr3 = lidar_odometry.plane_points.makeShared();
+            auto ptr = full_cloud.makeShared();
+            //auto ptr = lidar_odometry.edge_points.makeShared();
+            auto ptr2 = cloud;
+            //auto ptr3 = lidar_odometry.plane_points.makeShared();
 
             //pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
-            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> rgb(ptr2, 155, 155, 155);
-            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity(ptr, 155, 0, 0);
-            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity2(ptr3, 0, 255, 0);
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> rgb(ptr2, 155, 120, 0);
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity(ptr, 155, 155, 155);
+            //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity2(ptr3, 0, 255, 0);
 
             visualizer->removeAllPointClouds();
             visualizer->addPointCloud(ptr2, rgb, "raw cloud", 0);
             visualizer->addPointCloud(ptr, intensity, viz_name, 0);
-            visualizer->addPointCloud(ptr3, intensity2, "3", 0);
-            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, viz_name);
-            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "3");
-            visualizer->spinOnce(0.001);
+            //visualizer->addPointCloud(ptr3, intensity2, "3", 0);
+            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "raw cloud");
+            //visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "3");
+            visualizer->spinOnce(0.0001);
         }
 };
 

@@ -30,6 +30,9 @@ int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
         this->feature_extraction(*cloud_ptr);
         this->NewtonGussian();
 
+
+        T_list.push_back(T);
+
         last_edge_points = edge_points;
         last_plane_points = plane_points;
         last_pcn = pcn;
@@ -112,7 +115,7 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 
         for (int j = 0; j < index.size(); j++)
         {
-            if (plane_index.size() >= 20)
+            if (plane_index.size() >= 48)
             {
                 break;
             }
@@ -140,7 +143,7 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
         reverse(index.begin(), index.end());
         for (int j = 0; j < index.size(); j++)
         {
-            if (edge_index.size() >= 30)
+            if (edge_index.size() >= 24)
             {
                 break;
             }
@@ -196,14 +199,14 @@ int LidarOdometry::NewtonGussian(void)
     /* 牛顿高斯法优化 */
     float x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     cout << "__________" << endl;
-    for (int num = 0; num < 4; num++)
+    for (int num = 0; num < 10; num++)
     {
         this->matching(x);
 
-        MatrixXf temp = ((J * J.transpose() + 1e-6 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
+        MatrixXf temp = ((J * J.transpose() + 1e-4 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
         VectorXf x_vect(6);
         x_vect << x[0], x[1], x[2], x[3], x[4], x[5];
-        x_vect = x_vect.matrix() - 1 * temp;
+        x_vect = x_vect.matrix() - 2 * temp;
         x[0] = x_vect(0);
         x[1] = x_vect(1);
         x[2] = x_vect(2);
@@ -387,7 +390,7 @@ VectorXf LidarOdometry::_get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, 
 
     VectorXf j(6);
     j << j11, j12, j13, j14, j15, j16;
-    j /= ((-x_2 + x_3)*(-x_2 + x_3) + (-y_2 + y_3)*(-y_2 + y_3) + (-z_2 + z_3)*(-z_2 + z_3));
+    j /= sqrt((-x_2 + x_3)*(-x_2 + x_3) + (-y_2 + y_3)*(-y_2 + y_3) + (-z_2 + z_3)*(-z_2 + z_3));
 
     return j;
 }
@@ -426,7 +429,7 @@ VectorXf LidarOdometry::_get_jacobi_plane(Vector3f p1, Vector3f p2, Vector3f p3,
 
     VectorXf j(6);
     j << j21, j22, j23, j24, j25, j26;
-    j /= sqrt(((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3))*((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3)) + (-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3))*(-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3)) + ((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3))*((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3)));
+    j /= (((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3))*((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3)) + (-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3))*(-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3)) + ((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3))*((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3)));
 
     return j;
 }
