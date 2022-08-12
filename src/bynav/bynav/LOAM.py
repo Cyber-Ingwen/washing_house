@@ -1,4 +1,5 @@
 import math
+from os import scandir
 import numpy as np
 from math import *
 import time
@@ -25,7 +26,7 @@ class LOAM():
         #pcn = self.feature_extraction.allpiont
         T_list = self.lidar_odometry.T_list
         pcn = self.map.output(self.feature_extraction.allpiont, T_list)
-        print(pcn.shape)
+        #print(pcn)
         #pcn = self.feature_extraction.ground_point
         return pcn
 
@@ -53,9 +54,9 @@ class FeatureExtraction():
         self.plane_points_index = []
 
         """分割地面点"""
-        pcn = self.LEGO_cloudhandler.pointcloudproject(pcn)
-        pcn,self.ground_point_index = self.LEGO_cloudhandler.markground(pcn)
-        self.ground_point = pcn[self.ground_point_index, :]
+        #pcn = self.LEGO_cloudhandler.pointcloudproject(pcn)
+        #pcn,self.ground_point_index = self.LEGO_cloudhandler.markground(pcn)
+        #self.ground_point = pcn[self.ground_point_index, :]
 
         """分割地面点"""
         for i in range(pcn.shape[0]):
@@ -180,7 +181,7 @@ class LidarOdometry():
 
     def NewtonGussian(self, features):
         """牛顿高斯法优化"""
-        x = np.array([0.1, 0.1, 0.1, 1, 1, 1])
+        x = np.array([0,0,0,0,0,0])
         
         print("___________")
         for num in range(3):
@@ -340,6 +341,7 @@ class LidarOdometry():
         return t
     
     def transform(self, x, T):  #通过T（有R，t的属性）,6自由度属性，使点（我们用特征点）做变换
+        print("T_everytime:",T)
         R = self._get_R(T)
         t = self._get_t(T)
         x_vect, x_label = x[:,:3], x[:,3:]
@@ -541,7 +543,6 @@ class Map():
     def __init__(self):
         self.last_features = []
         self.init_flag = 0
-        self.t_flag = 1
         self.allpiont_save = []
         self.lidar_odometry = LidarOdometry()
         pass
@@ -549,18 +550,68 @@ class Map():
     def input(self,features):
         self.features = features    #features包含两种特征点的数据(2*n*5)
         return self.features[0]
-    
+
+    def tomask(self,x):
+        for i in range (x.shape[0]):
+                if x[i]>=-10 and x[i]<=10:
+                    print(x[i])
+                    x[i] = 1
+                else:
+                    print(x[i])
+                    x[i] = 0
+        return x    
+
     def output(self, allpiont, T_list):
         if self.init_flag == 0:
             self.allpiont_save = allpiont
             self.init_flag = 1
 
         elif self.init_flag == 1:
-            for i in range(self.t_flag):
-                allpiont = self.lidar_odometry.transform(allpiont, T_list[-i])
+            print(allpiont[:,0])
+            for i in range(len(T_list)):
+                allpiont = self.lidar_odometry.transform(allpiont, T_list[-i-1])
+            #print(allpiont[:,0])
+            #print(allpiont.shape)
+
+            x = np.array(allpiont[:,0])
+            y = np.array(allpiont[:,1])
+            z = np.array(allpiont[:,2])
+            scan = np.array(allpiont[:,3])
+            degree = np.array(allpiont[:,4])
+            mask = np.logical_and(np.logical_and(x>=-10000, x<=10000), np.logical_and(y>=-10000, y<=10000),np.logical_and(z>=-10000, z<=10000))
+            #print(x)
+            '''
+            x = self.tomask(x)
+            y = self.tomask(y)
+            z = self.tomask(z)
+            print(x)
+            mask = np.logical_and(x==1, y==1, z==1)
+            '''
+            
+            x = x[mask]
+            y = y[mask]
+            z = z[mask]
+            scan = scan[mask]
+            degree = degree[mask]
+
+            x = x[:,np.newaxis]
+            #print(x.shape)
+            y = y[:,np.newaxis]
+            z = z[:,np.newaxis]
+            scan = scan[:,np.newaxis]
+            degree = degree[:,np.newaxis]
+            allpiont = np.concatenate((x,y,z,scan,degree),axis=1) 
+            
+            #print(allpiont.shape)
+            
+            
+            
             self.allpiont_save = np.append(self.allpiont_save,allpiont,axis=0)
-            self.t_flag += 1
         return self.allpiont_save  
+        
+
+
+
 
     def process(self, features):
         """主程序"""
@@ -586,12 +637,13 @@ class Map():
         self.last_features[0] = self.last_edge_points
         self.last_plane_points = np.append(self.plane_points,self.last_plane_points,axis=0)
         self.last_features[1] = self.last_plane_points
-
-    def fuck():
+    '''
+    def fk():
         self.laserCloudCenWidth = 10 #邻域宽度, cm为单位
         self.laserCloudCenHeight = 5 #邻域高度
         self.laserCloudCenDepth = 10 #邻域深度
         self.laserCloudWidth = 21   #子cube沿宽方向的分割个数
         self.laserCloudHeight = 11  #高方向个数
         self.laserCloudDepth = 21   #深度方向个数
-        self.laserCloudNum = self.laserCloudWidth * self.laserCloudHeight * self.laserCloudDepth   #子cube总数        
+        self.laserCloudNum = self.laserCloudWidth * self.laserCloudHeight * self.laserCloudDepth   #子cube总数    
+    '''    

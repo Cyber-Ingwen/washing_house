@@ -59,5 +59,5 @@ https://mobaxterm.mobatek.net/
 export display by:
 
 ```sh
-export DISPLAY=172.16.197.29:0.0       
+export DISPLAY=172.16.197.29:0.0        
 ```
