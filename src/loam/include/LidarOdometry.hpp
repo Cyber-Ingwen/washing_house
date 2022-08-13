@@ -2,8 +2,6 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include <Eigen/Dense>
-#include <ceres/ceres.h>
-
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -30,12 +28,12 @@ class LidarOdometry
 
         LidarOdometry();
         int input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr);
-        int feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
+        int feature_extraction(pcl::PointCloud<pcl::PointXYZI>::Ptr  cloud_ptr);
         int NewtonGussian(void);
         int LevenbergMarquardt(void);
 
         int matching(float *T);
-        pcl::PointCloud<pcl::PointXYZI> transform(pcl::PointCloud<pcl::PointXYZI> cloud, float *T);
+        int transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr, float *T);
         VectorXf _get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, float *T);
         VectorXf _get_jacobi_plane(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4, float *T);
 
