@@ -49,7 +49,6 @@ class point_cloud_node: public rclcpp::Node
             t0 = clock();
 
             lidar_odometry.input(cloud);
-            RCLCPP_INFO(this->get_logger(), "断点");
 
             /*
             if (lidar_odometry.init_flag == 1)
@@ -67,6 +66,9 @@ class point_cloud_node: public rclcpp::Node
             }
             
             */
+            auto old_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            *old_cloud = *cloud;
+
             full_cloud = lidar_odometry.transform(cloud, lidar_odometry.T);
             
             t1 = clock();
@@ -88,7 +90,7 @@ class point_cloud_node: public rclcpp::Node
             // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> intensity2(ptr3, 0, 255, 0);
 
             visualizer->removeAllPointClouds();
-            visualizer->addPointCloud(cloud, source_handler, "raw cloud", 0);
+            visualizer->addPointCloud(old_cloud, source_handler, "raw cloud", 0);
             visualizer->addPointCloud(full_cloud, aligned_handler, viz_name, 0);
             
             //visualizer->addPointCloud(ptr3, intensity2, "3", 0);
