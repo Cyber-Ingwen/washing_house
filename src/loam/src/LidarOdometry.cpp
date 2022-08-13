@@ -28,11 +28,9 @@ int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
     else if (init_flag == 1)
     {
         this->feature_extraction(*cloud_ptr);
-        this->NewtonGussian();
-
+        this->LevenbergMarquardt();
 
         T_list.push_back(T);
-
         last_edge_points = edge_points;
         last_plane_points = plane_points;
         last_pcn = pcn;
@@ -199,14 +197,15 @@ int LidarOdometry::NewtonGussian(void)
     /* 牛顿高斯法优化 */
     float x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     cout << "__________" << endl;
+    VectorXf x_vect(6);
     for (int num = 0; num < 10; num++)
     {
         this->matching(x);
 
-        MatrixXf temp = ((J * J.transpose() + 1e-4 * MatrixXf::Identity(6, 6)).inverse()) * J * F.matrix();
-        VectorXf x_vect(6);
+        MatrixXf temp = ((J * J.transpose()).inverse()) * J * F.matrix();
+        x_vect = VectorXf::Zero(6);
         x_vect << x[0], x[1], x[2], x[3], x[4], x[5];
-        x_vect = x_vect.matrix() - 2 * temp;
+        x_vect = x_vect.matrix() - 4 * temp;
         x[0] = x_vect(0);
         x[1] = x_vect(1);
         x[2] = x_vect(2);
@@ -216,8 +215,65 @@ int LidarOdometry::NewtonGussian(void)
 
         memcpy(T, x, sizeof(x));
 
+        cout << "\033c" << flush;
+        cout << "x: " << x_vect.norm() << " f: " << F.norm() << "delta: " << temp.transpose() << endl;
+        if (F.norm() < 15) {break;}
+    }
+
+    return 1;
+}
+
+int LidarOdometry::LevenbergMarquardt(void)
+{
+    /* 列文伯格-马夸尔特算法优化 */
+    float x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    float x_new[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    this->matching(x);
+
+    double t = 1e-6;
+    double v = 2.0;
+    MatrixXf g = J * F.matrix();
+    MatrixXf H = J * J.transpose();
+    double u = t * H.maxCoeff();
+    auto F_last = F.norm();
+    cout << "__________" << endl;
+
+    for (int num = 0; num < 3; num++)
+    {
+        VectorXf h = (H - u * MatrixXf::Identity(6, 6)).inverse() * g;
+        VectorXf x_vect = VectorXf::Zero(6);
+
+        x_vect << x[0], x[1], x[2], x[3], x[4], x[5];
+        x_vect = x_vect - h;
+        x_new[0] = x_vect(0);
+        x_new[1] = x_vect(1);
+        x_new[2] = x_vect(2);
+        x_new[3] = x_vect(3);
+        x_new[4] = x_vect(4);
+        x_new[5] = x_vect(5);
+        this->matching(x_new);
+
+        auto p = (F_last - F.norm()) / double(0.5 * h.matrix().transpose() * (u * h - g));
+        if (p > 0)
+        {
+            memcpy(x, x_new, sizeof(x_new));
+            H = J * J.transpose();
+            g = J * F.matrix();
+            F_last = F.norm();
+            u = u * max(0.3, (1 - pow((2 * p - 1), 3)));
+            v = 2.0;
+        }
+        else 
+        {
+            u = u * v;
+            v = 2.0 * v;
+        }
+
+        memcpy(T, x, sizeof(x));
+
+        cout << "\033c" << flush;
         cout << "x: " << x_vect.norm() << " f: " << F.norm() << endl;
-        if (F.norm() < 10) {break;}
+        if (F.norm() < 15) {break;}
     }
 
     return 1;
@@ -252,7 +308,7 @@ int LidarOdometry::matching(float *T)
 
         ArrayXi index = ArrayXi::LinSpaced(distance_vect.size(), 0, distance_vect.size() - 1);
         auto rule = [distance_vect](float a, float b) -> bool{return distance_vect(a) < distance_vect(b);};
-        sort(index.data(), index.data() + index.size(), rule);
+        partial_sort(index.data(), index.data() + 2, index.data() + index.size(), rule);
 
         int nearest_index, near_angle_index;
         nearest_index = index(0);
@@ -303,7 +359,7 @@ int LidarOdometry::matching(float *T)
 
         ArrayXi index = ArrayXi::LinSpaced(distance_vect.size(), 0, distance_vect.size() - 1);
         auto rule = [distance_vect](float a, float b) -> bool{return distance_vect(a) < distance_vect(b);};
-        sort(index.data(), index.data() + index.size(), rule);
+        partial_sort(index.data(), index.data() + 3, index.data() + index.size(), rule);
 
         int nearest_index, near_angle_index, near_scan_index;
         nearest_index = index(0);
@@ -389,8 +445,9 @@ VectorXf LidarOdometry::_get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, 
     float j16 = (-2*x_2 + 2*x_3)*((x + x_1*cos(beta)*cos(gamma) - x_2 - y_1*sin(gamma)*cos(beta) + z_1*sin(beta))*(x_1*(sin(alpha)*sin(gamma) - sin(beta)*cos(alpha)*cos(gamma)) + y_1*(sin(alpha)*cos(gamma) + sin(beta)*sin(gamma)*cos(alpha)) + z + z_1*cos(alpha)*cos(beta) - z_3) - (x + x_1*cos(beta)*cos(gamma) - x_3 - y_1*sin(gamma)*cos(beta) + z_1*sin(beta))*(x_1*(sin(alpha)*sin(gamma) - sin(beta)*cos(alpha)*cos(gamma)) + y_1*(sin(alpha)*cos(gamma) + sin(beta)*sin(gamma)*cos(alpha)) + z + z_1*cos(alpha)*cos(beta) - z_2)) + (2*y_2 - 2*y_3)*((x_1*(sin(alpha)*sin(gamma) - sin(beta)*cos(alpha)*cos(gamma)) + y_1*(sin(alpha)*cos(gamma) + sin(beta)*sin(gamma)*cos(alpha)) + z + z_1*cos(alpha)*cos(beta) - z_2)*(x_1*(sin(alpha)*sin(beta)*cos(gamma) + sin(gamma)*cos(alpha)) + y + y_1*(-sin(alpha)*sin(beta)*sin(gamma) + cos(alpha)*cos(gamma)) - y_3 - z_1*sin(alpha)*cos(beta)) - (x_1*(sin(alpha)*sin(gamma) - sin(beta)*cos(alpha)*cos(gamma)) + y_1*(sin(alpha)*cos(gamma) + sin(beta)*sin(gamma)*cos(alpha)) + z + z_1*cos(alpha)*cos(beta) - z_3)*(x_1*(sin(alpha)*sin(beta)*cos(gamma) + sin(gamma)*cos(alpha)) + y + y_1*(-sin(alpha)*sin(beta)*sin(gamma) + cos(alpha)*cos(gamma)) - y_2 - z_1*sin(alpha)*cos(beta)));
 
     VectorXf j(6);
+    j = VectorXf::Zero(6);
     j << j11, j12, j13, j14, j15, j16;
-    j /= sqrt((-x_2 + x_3)*(-x_2 + x_3) + (-y_2 + y_3)*(-y_2 + y_3) + (-z_2 + z_3)*(-z_2 + z_3));
+    j /= ((-x_2 + x_3)*(-x_2 + x_3) + (-y_2 + y_3)*(-y_2 + y_3) + (-z_2 + z_3)*(-z_2 + z_3));
 
     return j;
 }
@@ -428,8 +485,9 @@ VectorXf LidarOdometry::_get_jacobi_plane(Vector3f p1, Vector3f p2, Vector3f p3,
     float j26 = (-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3);
 
     VectorXf j(6);
+    j = VectorXf::Zero(6);
     j << j21, j22, j23, j24, j25, j26;
-    j /= (((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3))*((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3)) + (-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3))*(-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3)) + ((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3))*((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3)));
+    j /= sqrt(((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3))*((-x_2 + x_3)*(y_3 - y_4) - (x_3 - x_4)*(-y_2 + y_3)) + (-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3))*(-(-x_2 + x_3)*(z_3 - z_4) + (x_3 - x_4)*(-z_2 + z_3)) + ((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3))*((-y_2 + y_3)*(z_3 - z_4) - (y_3 - y_4)*(-z_2 + z_3)));
 
     return j;
 }

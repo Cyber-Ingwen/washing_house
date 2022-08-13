@@ -28,6 +28,7 @@ class LidarOdometry
         int input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr);
         int feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud);
         int NewtonGussian(void);
+        int LevenbergMarquardt(void);
 
         int matching(float *T);
         pcl::PointCloud<pcl::PointXYZI> transform(pcl::PointCloud<pcl::PointXYZI> cloud, float *T);
