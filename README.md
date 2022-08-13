@@ -12,10 +12,20 @@ colcon build --symlink-install --parallel-workers 8
 source install/setup.bash
 echo source install/setup.bash >> ~/.bashrc
 ```
+Install Ceres
+```sh
+git clone https://github.com/ceres-solver/ceres-solver.git && \
+cd ceres-solver && \
+git checkout tags/2.1.0 && \
+mkdir build && cd build && \
+cmake .. && \
+make -j8 && \
+sudo make install && \
+```
 
+Install Open3D
 ```sh
 apt install pip
-pip install open3d
 pip install open3d
 ```
 
@@ -60,5 +70,9 @@ https://mobaxterm.mobatek.net/
 export display by:
 
 ```sh
+<<<<<<< HEAD
+export DISPLAY=172.16.197.29:0.0        
+=======
 export DISPLAY=172.16.196.215:0.0     
+>>>>>>> 46abb26b70ef79b7b03e7065f1dc95574203b9d4
 ```

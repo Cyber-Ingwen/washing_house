@@ -1,10 +1,14 @@
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+
 #include <Eigen/Dense>
+#include <ceres/ceres.h>
+
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include "sensor_msgs/msg/point_cloud2.hpp"
+
 
 using namespace Eigen;
 using namespace std;
