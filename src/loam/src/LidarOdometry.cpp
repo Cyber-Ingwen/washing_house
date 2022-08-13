@@ -32,9 +32,8 @@ int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
     }
     else if (init_flag == 1)
     {
-        this->feature_extraction(*cloud_ptr);
-        this->NewtonGussian();
-
+        this->feature_extraction(cloud_ptr);
+        this->LevenbergMarquardt();
 
         T_list.push_back(T);
 
@@ -244,7 +243,7 @@ int LidarOdometry::LevenbergMarquardt(void)
     auto F_last = F.norm();
     cout << "__________" << endl;
 
-    for (int num = 0; num < 3; num++)
+    for (int num = 0; num < 300; num++)
     {
         VectorXf h = (H - u * MatrixXf::Identity(6, 6)).inverse() * g;
         VectorXf x_vect = VectorXf::Zero(6);
@@ -418,7 +417,7 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr LidarOdometry::transform(pcl::PointCloud<pc
         pc_matrix.col(i) = R * v.matrix() + t.matrix();
     }
 
-    return cloud_ptr;
+    return cloud;
 }
 
 VectorXf LidarOdometry::_get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, float *T)
