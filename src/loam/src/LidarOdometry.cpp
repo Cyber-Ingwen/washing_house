@@ -11,81 +11,85 @@ using namespace std;
 LidarOdometry::LidarOdometry()
 {
     init_flag = 0;
+    last_edge_points = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    last_plane_points = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    last_pcn = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    edge_points = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    plane_points = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    pcn = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 }
 
 int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
 {
     if (init_flag == 0)
     {
-        this->feature_extraction(*cloud_ptr);
-
-        last_edge_points = edge_points;
-        last_plane_points = plane_points;
-        last_pcn = pcn;
+        this->feature_extraction(cloud_ptr);
+        *last_edge_points = *edge_points;
+        *last_plane_points = *plane_points;
+        *last_pcn = *pcn;
 
         init_flag = 1;
     }
     else if (init_flag == 1)
     {
-        this->feature_extraction(*cloud_ptr);
+        this->feature_extraction(cloud_ptr);
         this->NewtonGussian();
 
 
         T_list.push_back(T);
 
-        last_edge_points = edge_points;
-        last_plane_points = plane_points;
-        last_pcn = pcn;
+        *last_edge_points = *edge_points;
+        *last_plane_points = *plane_points;
+        *last_pcn = *pcn;
     }
 
     return 1;
 }
 
-int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
+int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud)
 {
-    pcn.clear();
-    edge_points.clear();
-    plane_points.clear();
+    pcn->clear();
+    edge_points->clear();
+    plane_points->clear();
 
     /* 分割地面点 */
-    for (int i = 0; i < cloud.points.size(); i++)
+    for (int i = 0; i < cloud->points.size(); i++)
     {
         if(i % 16 >= 4)
         {
-            pcn.points.push_back(cloud.points[i]);
+            pcn->points.push_back(cloud->points[i]);
         }
     }
-
     /* 提取竖线和平面 */
     for (int sector = 0; sector < 6; sector++)
     {
         vector<float> curv_list;
-        for (int i = int(pcn.points.size() / 6) * sector; i < int(pcn.points.size() / 6) * (sector + 1); i++)
+        for (int i = int(pcn->points.size() / 6) * sector; i < int(pcn->points.size() / 6) * (sector + 1); i++)
         {
-            float x = pcn.points[i].x;
-            float y = pcn.points[i].y;
-            float z = pcn.points[i].z;
+            float x = pcn->points[i].x;
+            float y = pcn->points[i].y;
+            float z = pcn->points[i].z;
             float r0 = x*x + y*y + z*z;
 
             float curv = 0;
             float sum[3] = {0, 0, 0};
             float sum2 = 0;
 
-            if((i - 12 * 5 >= 0 ) && (i + 12 * 5 < pcn.points.size()))
+            if((i - 12 * 5 >= 0 ) && (i + 12 * 5 < pcn->points.size()))
             {
                 for (int j = 0; j < 5; j++)
                 {
                     int next_index = i + 12 * j;
                     int last_index = i - 12 * j;
-                    sum[0] += (x - pcn.points[last_index].x);
-                    sum[0] += (x - pcn.points[next_index].x);
-                    sum[1] += (y - pcn.points[last_index].y);
-                    sum[1] += (y - pcn.points[next_index].y);
-                    sum[2] += (z - pcn.points[last_index].z);
-                    sum[2] += (z - pcn.points[next_index].z);
+                    sum[0] += (x - pcn->points[last_index].x);
+                    sum[0] += (x - pcn->points[next_index].x);
+                    sum[1] += (y - pcn->points[last_index].y);
+                    sum[1] += (y - pcn->points[next_index].y);
+                    sum[2] += (z - pcn->points[last_index].z);
+                    sum[2] += (z - pcn->points[next_index].z);
 
-                    sum2 += (x - pcn.points[last_index].x) * (x - pcn.points[last_index].x) + (y - pcn.points[last_index].y) * (y - pcn.points[last_index].y) + (z - pcn.points[last_index].z) * (z - pcn.points[last_index].z);
-                    sum2 += (x - pcn.points[next_index].x) * (x - pcn.points[next_index].x) + (y - pcn.points[next_index].y) * (y - pcn.points[next_index].y) + (z - pcn.points[next_index].z) * (z - pcn.points[next_index].z);
+                    sum2 += (x - pcn->points[last_index].x) * (x - pcn->points[last_index].x) + (y - pcn->points[last_index].y) * (y - pcn->points[last_index].y) + (z - pcn->points[last_index].z) * (z - pcn->points[last_index].z);
+                    sum2 += (x - pcn->points[next_index].x) * (x - pcn->points[next_index].x) + (y - pcn->points[next_index].y) * (y - pcn->points[next_index].y) + (z - pcn->points[next_index].z) * (z - pcn->points[next_index].z);
                 }
 
                 curv = (sum[0] * sum[0] + sum[1] * sum[1] + sum[2] * sum[2]) / (sum2);
@@ -94,8 +98,8 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 
                 int next_index = i + 12 * 5;
                 int last_index = i - 12 * 5;
-                float rl = pcn.points[last_index].x * pcn.points[last_index].x + pcn.points[last_index].y * pcn.points[last_index].y + pcn.points[last_index].z * pcn.points[last_index].z;
-                float rn = pcn.points[next_index].x * pcn.points[next_index].x + pcn.points[next_index].y * pcn.points[next_index].y + pcn.points[next_index].z * pcn.points[next_index].z;
+                float rl = pcn->points[last_index].x * pcn->points[last_index].x + pcn->points[last_index].y * pcn->points[last_index].y + pcn->points[last_index].z * pcn->points[last_index].z;
+                float rn = pcn->points[next_index].x * pcn->points[next_index].x + pcn->points[next_index].y * pcn->points[next_index].y + pcn->points[next_index].z * pcn->points[next_index].z;
                 if ((abs(rl - r0) / r0 > 0.2) || (abs(rn - r0) / r0 > 0.2))
                 {
                     curv = -1;
@@ -170,24 +174,24 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI> cloud)
 
         for (int ind : plane_index)
         {
-            ind += int(pcn.points.size() / 6) * sector;
+            ind += int(pcn->points.size() / 6) * sector;
             if (sector == 0)
             {
                 ind += 12 * 5;
             }
-            pcn.points[ind].intensity = ind;
-            plane_points.points.push_back(pcn.points[ind]);
+            pcn->points[ind].intensity = ind;
+            plane_points->points.push_back(pcn->points[ind]);
         }
 
         for (int ind : edge_index)
         {
-            ind += int(pcn.points.size() / 6) * sector;
+            ind += int(pcn->points.size() / 6) * sector;
             if (sector == 0)
             {
                 ind += 12 * 5;
             }
-            pcn.points[ind].intensity = ind;
-            edge_points.points.push_back(pcn.points[ind]);
+            pcn->points[ind].intensity = ind;
+            edge_points->points.push_back(pcn->points[ind]);
         }
     }
 
@@ -226,24 +230,24 @@ int LidarOdometry::NewtonGussian(void)
 int LidarOdometry::matching(float *T)
 {
     /* 特征点匹配 */
-    J = MatrixXf::Zero(6, edge_points.points.size() + plane_points.points.size());
-    F = VectorXf::Zero(edge_points.points.size() + plane_points.points.size());
-    auto last_pcn_matrix = last_pcn.getMatrixXfMap(3, 8, 0);
+    J = MatrixXf::Zero(6, edge_points->points.size() + plane_points->points.size());
+    F = VectorXf::Zero(edge_points->points.size() + plane_points->points.size());
+    auto last_pcn_matrix = last_pcn->getMatrixXfMap(3, 8, 0);
     
     /* 边缘点匹配 */
     auto raw_edge_points = edge_points;
-    auto raw_edge_points_matrix = raw_edge_points.getMatrixXfMap(3, 8, 0);
+    auto raw_edge_points_matrix = raw_edge_points->getMatrixXfMap(3, 8, 0);
 
     edge_points = this->transform(edge_points, T);
-    auto edge_points_matrix = edge_points.getMatrixXfMap(3, 8, 0);
-    auto last_edge_points_matrix = last_edge_points.getMatrixXfMap(3, 8, 0);
+    auto edge_points_matrix = edge_points->getMatrixXfMap(3, 8, 0);
+    auto last_edge_points_matrix = last_edge_points->getMatrixXfMap(3, 8, 0);
     
-    for (int i = 0; i < edge_points.points.size(); i++)
+    for (int i = 0; i < edge_points->points.size(); i++)
     {
         Vector3f edge_point = edge_points_matrix.col(i);
-        VectorXf distance_vect(last_edge_points.points.size());
+        VectorXf distance_vect(last_edge_points->points.size());
 
-        for (int j = 0; j < last_edge_points.points.size(); j++)
+        for (int j = 0; j < last_edge_points->points.size(); j++)
         {
             Vector3f last_point = last_edge_points_matrix.col(j);
             float distance = (last_point - edge_point).norm();
@@ -274,27 +278,27 @@ int LidarOdometry::matching(float *T)
 
         if (test_flag == 0)
         {
-            test_point_1.push_back(raw_edge_points.points[i]);
-            test_point_2.push_back(last_edge_points.points[nearest_index]);
-            test_point_2.push_back(last_edge_points.points[near_angle_index]);
+            test_point_1.push_back(raw_edge_points->points[i]);
+            test_point_2.push_back(last_edge_points->points[nearest_index]);
+            test_point_2.push_back(last_edge_points->points[near_angle_index]);
             test_flag = 1;
         }
     }
 
     /* 平面点匹配 */
     auto raw_plane_points = plane_points;
-    auto raw_plane_points_matrix = raw_plane_points.getMatrixXfMap(3, 8, 0);
+    auto raw_plane_points_matrix = raw_plane_points->getMatrixXfMap(3, 8, 0);
 
     plane_points = this->transform(plane_points, T);
-    auto plane_points_matrix = plane_points.getMatrixXfMap(3, 8, 0);
-    auto last_plane_points_matrix = last_plane_points.getMatrixXfMap(3, 8, 0);
+    auto plane_points_matrix = plane_points->getMatrixXfMap(3, 8, 0);
+    auto last_plane_points_matrix = last_plane_points->getMatrixXfMap(3, 8, 0);
 
-    for (int i = 0; i < plane_points.points.size(); i++)
+    for (int i = 0; i < plane_points->points.size(); i++)
     {
         Vector3f plane_point = plane_points_matrix.col(i);
-        VectorXf distance_vect(last_plane_points.points.size());
+        VectorXf distance_vect(last_plane_points->points.size());
 
-        for (int j = 0; j < last_plane_points.points.size(); j++)
+        for (int j = 0; j < last_plane_points->points.size(); j++)
         {
             Vector3f last_point = last_plane_points_matrix.col(j);
             float distance = (last_point - plane_point).norm();
@@ -318,8 +322,8 @@ int LidarOdometry::matching(float *T)
         Vector3f s = (p2 - p3).cross(p2 - p4);
         float h = (p2 - plane_point).dot(s / s.norm());
 
-        J.col(edge_points.points.size() + i) = this->_get_jacobi_plane(p1, p2, p3, p4, T);
-        F(edge_points.points.size() + i) = h;
+        J.col(edge_points->points.size() + i) = this->_get_jacobi_plane(p1, p2, p3, p4, T);
+        F(edge_points->points.size() + i) = h;
 
         if (isnan(h)){cout<<"WARNING PL H"<<endl;}
         if (isnan((J.col(i))(0))){cout<<"WARNING PL J"<<endl;}
@@ -331,9 +335,9 @@ int LidarOdometry::matching(float *T)
     return 1;
 }
 
-pcl::PointCloud<pcl::PointXYZI> LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI> cloud, float *T)
+pcl::PointCloud<pcl::PointXYZI>::Ptr LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, float *T)
 {
-    auto pc_matrix = cloud.getMatrixXfMap(3, 8, 0);
+    auto pc_matrix = cloud->getMatrixXfMap(3, 8, 0);
     float alpha, beta, gamma, delta_x, delta_y, delta_z;
 
     alpha = T[0];
