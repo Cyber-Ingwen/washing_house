@@ -290,7 +290,9 @@ int LidarOdometry::matching(float *T)
     auto raw_edge_points = edge_points;
     auto raw_edge_points_matrix = raw_edge_points.getMatrixXfMap(3, 8, 0);
 
-    this->transform(edge_points.makeShared(), T);
+    auto edge_points_ptr = edge_points.makeShared();
+    this->transform(edge_points_ptr, T);
+    edge_points = *edge_points_ptr;
     auto edge_points_matrix = edge_points.getMatrixXfMap(3, 8, 0);
     auto last_edge_points_matrix = last_edge_points.getMatrixXfMap(3, 8, 0);
     
@@ -341,7 +343,9 @@ int LidarOdometry::matching(float *T)
     auto raw_plane_points = plane_points;
     auto raw_plane_points_matrix = raw_plane_points.getMatrixXfMap(3, 8, 0);
 
-    this->transform(plane_points.makeShared(), T);
+    auto plane_points_ptr = plane_points.makeShared();
+    this->transform(plane_points_ptr, T);
+    plane_points = *plane_points_ptr;
     auto plane_points_matrix = plane_points.getMatrixXfMap(3, 8, 0);
     auto last_plane_points_matrix = last_plane_points.getMatrixXfMap(3, 8, 0);
 
@@ -387,7 +391,7 @@ int LidarOdometry::matching(float *T)
     return 1;
 }
 
-int LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr, float *T)
+pcl::PointCloud<pcl::PointXYZI>::Ptr LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr, float *T)
 {
     auto pc_matrix = cloud_ptr->getMatrixXfMap(3, 8, 0);
     float alpha, beta, gamma, delta_x, delta_y, delta_z;
@@ -412,7 +416,7 @@ int LidarOdometry::transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr, flo
         pc_matrix.col(i) = R * v.matrix() + t.matrix();
     }
 
-    return 1;
+    return cloud_ptr;
 }
 
 VectorXf LidarOdometry::_get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, float *T)

@@ -21,8 +21,7 @@ class point_cloud_node: public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_point_cloud;
 
         LidarOdometry lidar_odometry;
-        pcl::PointCloud<pcl::PointXYZI> full_cloud;
-        pcl::PointCloud<pcl::PointXYZI> last_cloud;
+        pcl::PointCloud<pcl::PointXYZI>::Ptr full_cloud;
 
         point_cloud_node(std::string name): Node(name)
         {
@@ -63,27 +62,29 @@ class point_cloud_node: public rclcpp::Node
                 }
             }
             */
-           last_cloud = *cloud;
+
+            auto last_cloud_ptr = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            *last_cloud_ptr = *cloud;
             
-            lidar_odometry.transform(cloud, lidar_odometry.T);
+            full_cloud = lidar_odometry.transform(cloud, lidar_odometry.T);
             
             t1 = clock();
             double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;
             cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
 
             /*可视化点云*/
-            auto ptr = last_cloud.makeShared();
-            auto ptr2 = cloud;
+            auto ptr = last_cloud_ptr;
+            auto ptr2 = full_cloud;
 
             //pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> color1(ptr, 155, 120, 0);
-            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> color2(ptr2, 155, 155, 155);
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> color2(ptr2, 120, 150, 155);
 
             visualizer->removeAllPointClouds();
-            visualizer->addPointCloud(ptr, color1, viz_name, 0);
             visualizer->addPointCloud(ptr2, color2, "2", 0);
+            visualizer->addPointCloud(ptr, color1, "1", 0);
             visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "2");
-            visualizer->spinOnce(0.0001);
+            visualizer->spinOnce(0.001);
             
         }
 };

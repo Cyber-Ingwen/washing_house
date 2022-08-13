@@ -33,7 +33,7 @@ class LidarOdometry
         int LevenbergMarquardt(void);
 
         int matching(float *T);
-        int transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr, float *T);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr transform(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr, float *T);
         VectorXf _get_jacobi_edge(Vector3f p1, Vector3f p2, Vector3f p3, float *T);
         VectorXf _get_jacobi_plane(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4, float *T);
 
