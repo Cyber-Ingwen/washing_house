@@ -34,6 +34,8 @@ class point_cloud_node: public rclcpp::Node
             /*配置可视化*/
             viz_name = "pcl cloud";
             visualizer = boost::make_shared<pcl::visualization::PCLVisualizer>(viz_name);
+            visualizer->setBackgroundColor(.3, .3, .3);
+
             
         }
 
@@ -42,7 +44,7 @@ class point_cloud_node: public rclcpp::Node
             /*处理点云*/
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
             pcl::fromROSMsg(*msg_ptr, *cloud);
-
+        
             /*运行算法*/
             t0 = clock();
 
