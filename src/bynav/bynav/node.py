@@ -26,6 +26,10 @@ class Node_bynav(Node):
         port = "/dev/ttyUSB0"
         baudrate = 115200
         self.ser = Serial(port, baudrate)
+        
+        self.ser.write("LOG COM1 GPGGA ONTIME 0.1 \n")
+        self.ser.write("LOG Port CORRIMUDATAA ONNEW \n")
+        self.ser.write("LOG Port INSATTA ONTIME 0.01 \n")
 
         self.get_logger().info("串口已打开")
 

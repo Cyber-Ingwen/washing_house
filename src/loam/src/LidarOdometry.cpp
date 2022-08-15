@@ -235,7 +235,7 @@ int LidarOdometry::LevenbergMarquardt(void)
     float x_new[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     this->matching(x);
 
-    double t = 1e-6;
+    double t = 1e-5;
     double v = 2.0;
     MatrixXf g = J * F.matrix();
     MatrixXf H = J * J.transpose();
@@ -243,9 +243,9 @@ int LidarOdometry::LevenbergMarquardt(void)
     auto F_last = F.norm();
     cout << "__________" << endl;
 
-    for (int num = 0; num < 300; num++)
+    for (int num = 0; num < 16; num++)  
     {
-        VectorXf h = (H - u * MatrixXf::Identity(6, 6)).inverse() * g;
+        VectorXf h = (H + u * MatrixXf::Identity(6, 6)).inverse() * g;
         VectorXf x_vect = VectorXf::Zero(6);
 
         x_vect << x[0], x[1], x[2], x[3], x[4], x[5];
@@ -270,6 +270,7 @@ int LidarOdometry::LevenbergMarquardt(void)
         }
         else 
         {
+            cout<<"else"<<endl;
             u = u * v;
             v = 2.0 * v;
         }
@@ -330,8 +331,12 @@ int LidarOdometry::matching(float *T)
         J.col(i) = this->_get_jacobi_edge(p1, p2, p3, T);
         F(i) = h;
 
-        if (isnan(h)){cout<<"WARNING H"<<endl;}
-        if (isnan((J.col(i))(0))){cout<<"WARNING J"<<endl;}
+        //if (isnan(h)){cout<<"WARNING H"<<endl;}
+        //if (isnan((J.col(i))(0))){cout<<"WARNING J"<<endl;}
+        if (d == 0.0) {cout<<"WARNING s"<<endl;}
+
+        Vector3f test = (p1 - p3).cross(p1 - p2);
+        if (test.norm() == 0.0) {cout<<"WARNING 共线"<<endl;}
 
         if (test_flag == 0)
         {
@@ -382,8 +387,28 @@ int LidarOdometry::matching(float *T)
         J.col(edge_points->points.size() + i) = this->_get_jacobi_plane(p1, p2, p3, p4, T);
         F(edge_points->points.size() + i) = h;
 
-        if (isnan(h)){cout<<"WARNING PL H"<<endl;}
-        if (isnan((J.col(i))(0))){cout<<"WARNING PL J"<<endl;}
+        //if (s.norm() == 0.0) {cout<<"WARNING 共线"<<endl;}
+        //if (isnan(s.norm())){cout<<"WARNING PL S"<<endl;}
+        if (isnan(h))
+        {
+            cout<<"WARNING PL H"<<endl;
+            while (1)
+            {
+                /* code */
+            }
+            
+            h = 0;
+            VectorXf j = VectorXf::Zero(6);
+            j << 0, 0, 0, 0, 0, 0;
+            J.col(edge_points->points.size() + i) = j;
+        }
+        if (isnan((J.col(i))(0)))
+        {
+            cout<<"WARNING PL J"<<endl;
+            VectorXf j = VectorXf::Zero(6);
+            j << 0, 0, 0, 0, 0, 0;
+            J.col(edge_points->points.size() + i) = j;
+        }
     }
 
     edge_points = raw_edge_points;

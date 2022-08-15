@@ -50,26 +50,25 @@ class point_cloud_node: public rclcpp::Node
 
             lidar_odometry.input(cloud);
 
-            /*
+            auto last_cloud_ptr = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            *last_cloud_ptr = *cloud;
+            full_cloud = cloud;
+            
             if (lidar_odometry.init_flag == 1)
             {
                 for (int i = lidar_odometry.T_list.size() - 1; i >= 0; i--)
                 {
-                    *cloud = lidar_odometry.transform(*cloud, lidar_odometry.T_list[i]);
-                }
-                
-                for (int i = 0; i < cloud->points.size(); i++)
-                {
-                    full_cloud.push_back(cloud->points[i]);
+                    full_cloud = lidar_odometry.transform(full_cloud, lidar_odometry.T_list[i]);
                 }
             }
+            /*
+            full_cloud = lidar_odometry.transform(cloud, lidar_odometry.T);
             */
 
-            auto last_cloud_ptr = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-            *last_cloud_ptr = *cloud;
-            
-            full_cloud = lidar_odometry.transform(cloud, lidar_odometry.T);
-            
+            auto ptr3 = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            *ptr3 = *lidar_odometry.plane_points;
+            ptr3 = lidar_odometry.transform(ptr3, lidar_odometry.T);
+
             t1 = clock();
             double endtime=(double)(t1-t0)/CLOCKS_PER_SEC;
             cout<<"Total time:"<<endtime*1000<<"ms"<<endl;
@@ -77,15 +76,19 @@ class point_cloud_node: public rclcpp::Node
             /*可视化点云*/
             auto ptr = last_cloud_ptr;
             auto ptr2 = full_cloud;
+            //auto ptr3 = lidar_odometry.plane_points;
 
             //pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity(ptr, "intensity");
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> color1(ptr, 155, 120, 0);
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> color2(ptr2, 120, 150, 155);
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> color3(ptr3, 255, 0, 0);
 
             visualizer->removeAllPointClouds();
+            visualizer->addPointCloud(ptr3, color3, "3", 0);
             visualizer->addPointCloud(ptr2, color2, "2", 0);
             visualizer->addPointCloud(ptr, color1, "1", 0);
-            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "2");
+            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.2, "2");
+            visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "3");
             visualizer->spinOnce(0.001);
             
         }
