@@ -17,6 +17,8 @@ LidarOdometry::LidarOdometry()
     edge_points = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     plane_points = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     pcn = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    kdtreeCornerFromMap = boost::make_shared<pcl::search::KdTree<pcl::PointXYZI>>();
+    kdtreeSurfFromMap = boost::make_shared<pcl::search::KdTree<pcl::PointXYZI>>();
 }
 
 int LidarOdometry::input(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr)
@@ -192,6 +194,9 @@ int LidarOdometry::feature_extraction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud
             pcn->points[ind].intensity = ind;
             edge_points->points.push_back(pcn->points[ind]);
         }
+
+        kdtreeCornerFromMap->setInputCloud(edge_points);
+		kdtreeSurfFromMap->setInputCloud(plane_points);
     }
 
     return 1;
@@ -282,6 +287,28 @@ int LidarOdometry::LevenbergMarquardt(void)
     }
 
     return 1;
+}
+
+
+void LidarOdometry::kdMatching(float *T)
+{
+    J = MatrixXf::Zero(6, edge_points->points.size() + plane_points->points.size());
+    F = VectorXf::Zero(edge_points->points.size() + plane_points->points.size());
+
+    auto raw_edge_points = edge_points;
+    edge_points = this->transform(edge_points, T);
+
+    for (int i = 0; i < edge_points->points.size(); i++)
+    {
+        kdtreeCornerLast->nearestKSearch(edge_points->points, 2, pointSearchInd, pointSearchSqDis);
+
+        int nearest_index, near_angle_index;
+        nearest_index = pointSearchInd[0];
+        near_angle_index = pointSearchInd[1];
+
+    }
+
+    return;
 }
 
 int LidarOdometry::matching(float *T)
