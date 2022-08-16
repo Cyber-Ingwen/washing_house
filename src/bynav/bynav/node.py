@@ -19,17 +19,13 @@ class Node_bynav(Node):
         self.gps_pub = self.create_publisher(NavSatFix,"gps", 10) 
         self.imu_pub = self.create_publisher(Imu,"imu", 10) 
 
-        timer_period = 1
+        timer_period = 0.01
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         """打开串口"""
         port = "/dev/ttyUSB0"
         baudrate = 115200
         self.ser = Serial(port, baudrate)
-        
-        self.ser.write("LOG COM1 GPGGA ONTIME 0.1 \n")
-        self.ser.write("LOG Port CORRIMUDATAA ONNEW \n")
-        self.ser.write("LOG Port INSATTA ONTIME 0.01 \n")
 
         self.get_logger().info("串口已打开")
 
@@ -61,6 +57,7 @@ class Node_bynav(Node):
     def timer_callback(self):
         """读取解析数据"""
         line = self.ser.readline()
+        line = str(line)
         #line = "#RAWIMUA,ICOM4,0,0.0,FINESTEERING,2107,37454.000,00000000,0000,68;2107,37454.000000000,00000000,-2116037,15254,-3991,1707,2161,3258*ab408b44"
         line = str(line)
         list = line.split(',')
@@ -77,7 +74,7 @@ class Node_bynav(Node):
             else:
                 self.gps_flag = 0
 
-        elif str(list[0]) == "#RAWIMUA":
+        elif str(list[0]) == "b'#RAWIMUA":
             """imu校正数据"""
             header, list = line.split(';')
             list = list.split(',')
@@ -89,6 +86,14 @@ class Node_bynav(Node):
                 LateralAcc = float(list[5])
                 LongitudinalAcc = -float(list[4])
                 VerticalAcc = float(list[3])
+
+                
+                PitchRate *= 3.0517578125e-05
+                RollRate *= 3.0517578125e-05
+                YawRate *= 3.0517578125e-05
+                LateralAcc *= 3.74094e-06
+                LongitudinalAcc *= 3.74094e-06
+                VerticalAcc *= 3.74094e-06
 
                 self.imu_msg.angular_velocity.x = PitchRate
                 self.imu_msg.angular_velocity.y = RollRate
