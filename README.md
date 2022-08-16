@@ -12,31 +12,31 @@ colcon build --symlink-install --parallel-workers 8
 source install/setup.bash
 echo source install/setup.bash >> ~/.bashrc
 ```
-*Install Ceres
-```sh
-git clone https://github.com/ceres-solver/ceres-solver.git && \
-cd ceres-solver && \
-git checkout tags/2.1.0 && \
-mkdir build && cd build && \
-cmake .. && \
-make -j8 && \
-sudo make install && \
-```
+* Install Ceres
+    ```sh
+    git clone https://github.com/ceres-solver/ceres-solver.git && \
+    cd ceres-solver && \
+    git checkout tags/2.1.0 && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j8 && \
+    sudo make install && \
+    ```
 
-*Install Open3D
-```sh
-apt install pip
-pip install open3d
-```
+* Install Open3D
+    ```sh
+    apt install pip
+    pip install open3d
+    ```
 
-*CAN-USB First Setup
-```sh
-bash src/chassis_node_cpp/scripts/setup_can2usb.bash
-```
-*CAN-USB Everytime Setup
-```sh
-bash src/chassis_node_cpp/scripts/setup_can2usb.bash
-```
+* CAN-USB First Setup
+    ```sh
+    bash src/chassis_node_cpp/scripts/setup_can2usb.bash
+    ```
+* CAN-USB Everytime Setup
+    ```sh
+    bash src/chassis_node_cpp/scripts/setup_can2usb.bash
+    ```
 
 # 1.Data from ros2 bagSS
 
