@@ -19,7 +19,7 @@ class Node_bynav(Node):
         self.gps_pub = self.create_publisher(NavSatFix,"gps", 10) 
         self.imu_pub = self.create_publisher(Imu,"imu", 10) 
 
-        timer_period = 1
+        timer_period = 0.01
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         """打开串口"""
@@ -56,6 +56,69 @@ class Node_bynav(Node):
 
     def timer_callback(self):
         """读取解析数据"""
+        line = self.ser.readline()
+        line = str(line)
+        #line = "#RAWIMUA,ICOM4,0,0.0,FINESTEERING,2107,37454.000,00000000,0000,68;2107,37454.000000000,00000000,-2116037,15254,-3991,1707,2161,3258*ab408b44"
+        line = str(line)
+        list = line.split(',')
+
+        """gps数据"""
+        if str(list[0]) == "$GPGGA":
+            if list[1] != "":
+                self.gps_msg.latitude = float(list[2])/100
+                self.gps_msg.longitude = float(list[4])/100
+                self.gps_msg.altitude = float(list[9])
+
+                self.gps_flag = 1
+
+            else:
+                self.gps_flag = 0
+
+        elif str(list[0]) == "b'#RAWIMUA":
+            """imu校正数据"""
+            header, list = line.split(';')
+            list = list.split(',')
+
+            if list[1] != "":
+                PitchRate = float((list[8].split('*'))[0])
+                RollRate = -float(list[7])
+                YawRate = float(list[6])
+                LateralAcc = float(list[5])
+                LongitudinalAcc = -float(list[4])
+                VerticalAcc = float(list[3])
+
+                
+                PitchRate *= 3.0517578125e-05
+                RollRate *= 3.0517578125e-05
+                YawRate *= 3.0517578125e-05
+                LateralAcc *= 3.74094e-06
+                LongitudinalAcc *= 3.74094e-06
+                VerticalAcc *= 3.74094e-06
+
+                self.imu_msg.angular_velocity.x = PitchRate
+                self.imu_msg.angular_velocity.y = RollRate
+                self.imu_msg.angular_velocity.z = YawRate
+
+                self.imu_msg.linear_acceleration.x = LateralAcc
+                self.imu_msg.linear_acceleration.y = LongitudinalAcc
+                self.imu_msg.linear_acceleration.z = VerticalAcc
+
+                self.imu_flag = 1
+
+            else:
+                self.imu_flag = 0
+
+        """发布数据"""
+        if(self.imu_flag == 1):
+            self.imu_pub.publish(self.imu_msg)
+            self.get_logger().info("发布imu消息")
+        elif(self.imu_flag == 0):
+            self.imu_pub.publish(self.imu_msg)
+            self.get_logger().info("imu无信号")
+
+            
+    def timer_callback2(self):
+        """读取解析数据"""
 
         line = self.ser.readline()
         line = str(line)
@@ -71,7 +134,7 @@ class Node_bynav(Node):
 
             else:
                 self.gps_flag = 0
-                self.gps_pub.publish(gps_msg)
+                self.gps_pub.publish(self.gps_msg)
                 self.get_logger().info("gps无信号")
 
         
