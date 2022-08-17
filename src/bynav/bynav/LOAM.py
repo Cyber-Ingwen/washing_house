@@ -23,10 +23,10 @@ class LOAM():
         pcn = self.lidar_odometry.transform(pcn, self.lidar_odometry.T) #通过T（有R，t的属性），使点（我们用特征点）做变换
         #pcn = self.map.input(self.feature_extraction.features)
         #pcn = self.map.process(self.feature_extraction.features)
-        #pcn = self.feature_extraction.allpiont
+        pcn = self.map.limit(self.feature_extraction.allpiont,-20,20,-20,20,-20,20)
         T_list = self.lidar_odometry.T_list
-        pcn = self.map.output(self.feature_extraction.allpiont, T_list)
-        #print(pcn)
+        #pcn = self.map.output(self.feature_extraction.allpiont, T_list)
+        print(pcn.shape)
         #pcn = self.feature_extraction.ground_point
         return pcn
 
@@ -341,7 +341,7 @@ class LidarOdometry():
         return t
     
     def transform(self, x, T):  #通过T（有R，t的属性）,6自由度属性，使点（我们用特征点）做变换
-        print("T_everytime:",T)
+        #print("T_everytime:",T)
         R = self._get_R(T)
         t = self._get_t(T)
         x_vect, x_label = x[:,:3], x[:,3:]
@@ -551,15 +551,27 @@ class Map():
         self.features = features    #features包含两种特征点的数据(2*n*5)
         return self.features[0]
 
-    def tomask(self,x):
-        for i in range (x.shape[0]):
-                if x[i]>=-10 and x[i]<=10:
-                    print(x[i])
-                    x[i] = 1
-                else:
-                    print(x[i])
-                    x[i] = 0
-        return x    
+    
+    def limit(self, allpiont, low_x, high_x, low_y, high_y, low_z, high_z):
+        x = np.array(allpiont[:,0])
+        y = np.array(allpiont[:,1])
+        z = np.array(allpiont[:,2])
+        scan = np.array(allpiont[:,3])
+        degree = np.array(allpiont[:,4])
+        mask = np.logical_and(np.logical_and(x>=low_x, x<=high_x), np.logical_and(y>=low_y, y<=high_y),np.logical_and(z>=low_z, z<=high_z))        
+        x = x[mask]
+        y = y[mask]
+        z = z[mask]
+        scan = scan[mask]
+        degree = degree[mask]
+
+        x = x[:,np.newaxis]
+        y = y[:,np.newaxis]
+        z = z[:,np.newaxis]
+        scan = scan[:,np.newaxis]
+        degree = degree[:,np.newaxis]
+        allpiont = np.concatenate((x,y,z,scan,degree),axis=1) 
+        return allpiont 
 
     def output(self, allpiont, T_list):
         if self.init_flag == 0:
@@ -578,7 +590,7 @@ class Map():
             z = np.array(allpiont[:,2])
             scan = np.array(allpiont[:,3])
             degree = np.array(allpiont[:,4])
-            mask = np.logical_and(np.logical_and(x>=-10000, x<=10000), np.logical_and(y>=-10000, y<=10000),np.logical_and(z>=-10000, z<=10000))
+            mask = np.logical_and(np.logical_and(x>=-100, x<=100), np.logical_and(y>=-100, y<=100),np.logical_and(z>=-100, z<=100))
             #print(x)
             '''
             x = self.tomask(x)
@@ -601,14 +613,13 @@ class Map():
             scan = scan[:,np.newaxis]
             degree = degree[:,np.newaxis]
             allpiont = np.concatenate((x,y,z,scan,degree),axis=1) 
-            
-            #print(allpiont.shape)
-            
-            
+            #print(allpiont)
+            print(allpiont.shape)
             
             self.allpiont_save = np.append(self.allpiont_save,allpiont,axis=0)
         return self.allpiont_save  
         
+
 
 
 
@@ -646,4 +657,4 @@ class Map():
         self.laserCloudHeight = 11  #高方向个数
         self.laserCloudDepth = 21   #深度方向个数
         self.laserCloudNum = self.laserCloudWidth * self.laserCloudHeight * self.laserCloudDepth   #子cube总数    
-    '''    
+    '''

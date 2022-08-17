@@ -61,7 +61,7 @@ export display by:
 
 ```sh
 <<<<<<< HEAD
-export DISPLAY=172.16.197.29:0.0        
+export DISPLAY=172.16.196.107:0.0  
 =======
 export DISPLAY=172.16.196.215:0.0     
 >>>>>>> 46abb26b70ef79b7b03e7065f1dc95574203b9d4
