@@ -13,9 +13,9 @@ class IMUSubscriber(Node):
         self.subscription  # prevent unused variable warning
 
     def listener_callback(self, kk):
-        #self.get_logger().info('I heard: "%s"' % msg.data)
         data=kk
-        print(data)
+        #print(data.angular_velocity.x)
+        print(data.linear_acceleration.y)
         self.get_logger().info('节点已创建')
 
 def main(args=None):
