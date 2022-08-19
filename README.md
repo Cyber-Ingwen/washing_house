@@ -4,7 +4,7 @@
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev
+sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev can-utils  libasio-dev
 ```
 
 ```sh
@@ -27,6 +27,16 @@ echo source install/setup.bash >> ~/.bashrc
     ```sh
     apt install pip
     pip install open3d
+    ```
+* Install boost
+    ```sh
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz
+    tar -xf boost_1_80_0.tar.gz
+    cd boost_1_80_0
+    sudo ./bootstrap.sh
+    sudo ./b2 install
+    cd ..
+    rm -r boost_1_80_0 boost_1_80_0.tar.gz
     ```
 
 * CAN-USB First Setup
