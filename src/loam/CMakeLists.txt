@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 project(loam)
 
 # SET(CMAKE_BUILD_TYPE "Debug")
-add_definitions(-std=c++14)
-set(CMAKE_CXX_FLAGS "-std=c++14")
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 set(CMAKE_BUILD_TYPE "RELEASE")
 
 find_package(ament_cmake_auto REQUIRED)

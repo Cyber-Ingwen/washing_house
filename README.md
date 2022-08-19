@@ -4,7 +4,7 @@
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev
+sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev can-utils  libasio-dev
 ```
 
 ```sh
