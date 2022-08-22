@@ -41,11 +41,11 @@ echo source install/setup.bash >> ~/.bashrc
 
 * CAN-USB First Setup
     ```sh
-    bash src/chassis_node_cpp/scripts/setup_can2usb.bash
+    bash src/hunter_ros2/ugv_sdk/scripts/setup_can2usb.bash
     ```
 * CAN-USB Everytime Setup
     ```sh
-    bash src/chassis_node_cpp/scripts/setup_can2usb.bash
+    bash src/hunter_ros2/ugv_sdk/scripts/bringup_can2usb_500k.bash
     ```
 
 # 1.Data from ros2 bagSS
