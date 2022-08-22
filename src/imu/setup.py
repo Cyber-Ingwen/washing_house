@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'imu_node = imu.imu_node:main',
-            'pointcloud_node = imu.pointcloud_node:main'
+            'pointcloud_node = imu.pointcloud_node:main',
+            'imu_fliter = imu.imu_fliter_node:main'
         ],
     },
 )

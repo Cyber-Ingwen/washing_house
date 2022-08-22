@@ -8,12 +8,29 @@ import math
 from std_msgs.msg import String
 from  matplotlib import pyplot
 
+import sys,os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+
+from imu_fliter_node import IMUPublisher
+'''x_linear = 0
+y_linear = 0
+z_linear = 0
+x_angle = 0
+y_angle = 0
+z_angle = 0
+q0 = float(1.0)
+q1 = float(0.0)
+q2 = float(0.0)
+q3 = float(0.0)'''
+
 class IMUSubscriber(Node):
 
     def __init__(self):
         super().__init__('imu_subscriber')
         self.subscription = self.create_subscription(Imu,'/imu',self.listener_callback,10)
         self.subscription  # prevent unused variable warning
+        
 
     def listener_callback(self, kk):
         data=kk
@@ -34,6 +51,8 @@ class IMUSubscriber(Node):
         #print(data.angular_velocity.x)
         #print(data.linear_acceleration.y)
         #self.get_logger().info('节点已创建')
+        k = IMUPublisher()
+        k.timer_callback(x_angle,y_angle,z_angle,x_linear,y_linear,z_linear,m.q0,m.q1,m.q2,m.q3)
 
 class mahony():
     q0 = float(1.0)
