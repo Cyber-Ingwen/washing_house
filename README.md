@@ -8,12 +8,14 @@ sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev can-utils  libasi
 ```
 
 ```sh
-colcon build --symlink-install --parallel-workers 8
+colcon build --symlink-install
 source install/setup.bash
 echo source install/setup.bash >> ~/.bashrc
 ```
 * Install Ceres
     ```sh
+    sudo apt-get update && \
+    sudo apt-get install libgoogle-glog-dev libgflags-dev && \
     git clone https://github.com/ceres-solver/ceres-solver.git && \
     cd ceres-solver && \
     git checkout tags/2.1.0 && \
@@ -33,8 +35,8 @@ echo source install/setup.bash >> ~/.bashrc
     wget https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz
     tar -xf boost_1_80_0.tar.gz
     cd boost_1_80_0
-    sudo ./bootstrap.sh
-    sudo ./b2 install
+    bash ./bootstrap.sh
+    bash ./b2 install
     cd ..
     rm -r boost_1_80_0 boost_1_80_0.tar.gz
     ```
