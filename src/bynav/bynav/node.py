@@ -110,6 +110,7 @@ class Node_bynav(Node):
 
         """发布数据"""
         if(self.imu_flag == 1):
+            self.imu_msg.header.stamp = self.get_clock().now().to_msg()
             self.imu_pub.publish(self.imu_msg)
             self.get_logger().info("发布imu消息")
         elif(self.imu_flag == 0):
