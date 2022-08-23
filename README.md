@@ -47,7 +47,8 @@ echo source install/setup.bash >> ~/.bashrc
     ```
 
 * Start Hunter Node 
-    control chassis by geometry_msgs/msg/Twist in topic /cmd_vel
+    Control chassis by geometry_msgs/msg/Twist in topic /cmd_vel
+    Hunter Node publish odom info by nav_msgs/msg/Odometry in topic odom
     ```sh
     bash src/hunter_ros2/ugv_sdk/scripts/bringup_can&start_hunter_node.bash
     ```
