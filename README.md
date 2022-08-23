@@ -47,6 +47,7 @@ echo source install/setup.bash >> ~/.bashrc
     ```
 
 * Start Hunter Node 
+    control chassis by geometry_msgs/msg/Twist in topic /cmd_vel
     ```sh
     bash src/hunter_ros2/ugv_sdk/scripts/bringup_can&start_hunter_node.bash
     ```
