@@ -17,13 +17,16 @@ ament_auto_find_build_dependencies()
 
 ament_auto_add_executable (frameFeature src/frameFeature.cpp)
 ament_auto_add_executable (lidarOdometry src/lidarOdometry.cpp)
+ament_auto_add_executable (FeatureExtraction src/FeatureExtraction.cpp)
 
+target_link_libraries(FeatureExtraction ${PCL_LIBRARIES})
 target_link_libraries(frameFeature ${PCL_LIBRARIES})
 target_link_libraries(lidarOdometry ${PCL_LIBRARIES} ${CERES_LIBRARIES})
 
 ament_auto_package ()
 
 install(TARGETS
+        FeatureExtraction
         frameFeature
         lidarOdometry
         DESTINATION lib/${PROJECT_NAME}

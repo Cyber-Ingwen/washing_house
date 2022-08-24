@@ -75,7 +75,7 @@ class LidarOdometry: public rclcpp::Node
         LidarOdometry(std::string name): Node(name)
         {
             /*创建并初始化接收*/
-            sub_plane_frame_cloud = this->create_subscription<sensor_msgs::msg::PointCloud2>("/plane_frame_cloud1", 10, std::bind(&LidarOdometry::cloudHandler, this, std::placeholders::_1));
+            sub_plane_frame_cloud = this->create_subscription<sensor_msgs::msg::PointCloud2>("/plane_points", 10, std::bind(&LidarOdometry::cloudHandler, this, std::placeholders::_1));
             
             pub_plane_frame_cloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/plane_frame_cloud2", 100);
             pub_frame_odometry = this->create_publisher<nav_msgs::msg::Odometry>("/frame_odom2", 100);
