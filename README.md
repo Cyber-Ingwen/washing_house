@@ -4,7 +4,9 @@
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev can-utils  libasio-dev
+sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev can-utils  libasio-dev 
+sudo apt-get install libpcl-dev ros-${ROS_DISTRO}-pcl-conversions 
+
 ```
 
 ```sh
@@ -50,7 +52,7 @@ echo source install/setup.bash >> ~/.bashrc
     Control chassis by geometry_msgs/msg/Twist in topic /cmd_vel
     Hunter Node publish odom info by nav_msgs/msg/Odometry in topic odom
     ```sh
-    bash src/hunter_ros2/ugv_sdk/scripts/bringup_can&start_hunter_node.bash
+    bash src/hunter_ros2/ugv_sdk/scripts/bringup_can2usb_start_hunter_node.bash
     ```
 # 1.Data from ros2 bagSS
 

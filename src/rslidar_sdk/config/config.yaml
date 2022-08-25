@@ -5,7 +5,7 @@ common:
                                                         #3: packet message comes from Pcap file
                                                         #4: packet message comes from Protobuf-UDP
                                                         #5: point cloud comes from Protobuf-UDP
-  send_packet_ros: true                                #true: Send packets through ROS or ROS2(Used to record packet)
+  send_packet_ros: false                                #true: Send packets through ROS or ROS2(Used to record packet)
   send_point_cloud_ros: true                            #true: Send point cloud through ROS or ROS2
   send_packet_proto: false                              #true: Send packets through Protobuf-UDP
   send_point_cloud_proto: false                         #true: Send point cloud through Protobuf-UDP
