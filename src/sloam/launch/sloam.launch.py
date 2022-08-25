@@ -15,7 +15,7 @@ def generate_launch_description():
         executable="lidarOdometry"
         )
 
-    Node(
+    rviz_node = Node(
             package='rviz2',
             executable='rviz2',
             name='rviz2',
@@ -23,6 +23,6 @@ def generate_launch_description():
             output='screen'
         )
     
-    launch_description = LaunchDescription([frameFeature_node, lidarOdometry_node])
+    launch_description = LaunchDescription([frameFeature_node, lidarOdometry_node, rviz_node])
         
     return launch_description
