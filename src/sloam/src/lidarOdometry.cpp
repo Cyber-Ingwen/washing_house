@@ -48,6 +48,8 @@ class LidarOdometry: public rclcpp::Node
         rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub_frame_odom_path;                  //发布激光雷达运动轨迹
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_sum_lidar_odom_cloud;   //发布拼接后的点云地图
 
+        std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
         //存储当前帧点云
         pcl::PointCloud<PointType>::Ptr lastFramePlanePtr = boost::make_shared<pcl::PointCloud<PointType>>();
         //存储上一帧点云
@@ -82,6 +84,8 @@ class LidarOdometry: public rclcpp::Node
             pub_frame_odom_path = this->create_publisher<nav_msgs::msg::Path>("/frame_odom_path2", 100);
             pub_sum_lidar_odom_cloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/sum_lidar_odom_cloud2", 10);
 
+            tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
             Eigen::Quaterniond temp(0,0,0,1); 
             q_0_curr = temp;     
             q_0_last = temp;                
@@ -112,61 +116,90 @@ void LidarOdometry::transformToLast(PointType const *const pi,PointType *const p
 
 //发布点云、里程计、轨迹、地图
 void LidarOdometry::publishResult(){
-    //累计帧间变换，得到从起点开始的里程计
-    q_0_curr = q_0_last * q_last_curr ;
-    t_0_curr = t_0_last + q_0_last * t_last_curr;
-    q_0_last = q_0_curr;
-    t_0_last = t_0_curr;
-    //发布里程计
-    nav_msgs::msg::Odometry LO;
-    LO.header.frame_id = "map";
-    LO.child_frame_id = "map_child";
-    LO.header.stamp = currHead.stamp;
-    LO.pose.pose.position.x = t_0_curr[0];
-    LO.pose.pose.position.y = t_0_curr[1];
-    LO.pose.pose.position.z = t_0_curr[2];
-    LO.pose.pose.orientation.x = q_0_curr.x();
-    LO.pose.pose.orientation.y = q_0_curr.y();
-    LO.pose.pose.orientation.z = q_0_curr.z();
-    LO.pose.pose.orientation.w = q_0_curr.w();
-    pub_frame_odometry->publish(LO);
-    //发布里轨迹
-    geometry_msgs::msg::PoseStamped pose_stamped;
-    pose_stamped.header.stamp = LO.header.stamp;
-    pose_stamped.header.frame_id = "map";
-    pose_stamped.pose = LO.pose.pose;
-    lidarPathInOdom.poses.push_back(pose_stamped);
-    lidarPathInOdom.header.stamp=LO.header.stamp;
-    lidarPathInOdom.header.frame_id="map";
-    pub_frame_odom_path->publish(lidarPathInOdom);
-    //发布平面特征点云
-    sensor_msgs::msg::PointCloud2 plane_frame_cloud_msgs;
-    pcl::toROSMsg(*currFramePlanePtr, plane_frame_cloud_msgs);
-    plane_frame_cloud_msgs.header.stamp = LO.header.stamp;
-    plane_frame_cloud_msgs.header.frame_id = "map";
-    pub_plane_frame_cloud->publish(plane_frame_cloud_msgs);
-    //发布拼接点云地图
-    if(numFrame % 5 == 0)
-    {
-        double r,p,y;
-        tf2::Quaternion tq(q_0_curr.x(),q_0_curr.y(),q_0_curr.z(),q_0_curr.w());
-        tf2::Matrix3x3(tq).getRPY(r,p,y);
-        Eigen::Affine3d transCurd;
-        pcl::getTransformation(t_0_curr.x(), t_0_curr.y(), t_0_curr.z(), r,p,y,transCurd);
-        pcl::PointCloud<PointType>::Ptr cloud_res = boost::make_shared<pcl::PointCloud<PointType>>();
-        pcl::transformPointCloud(*currFramePlanePtr, *cloud_res, transCurd);
-        *sumPlaneCloudPtr += *cloud_res;
+        //累计帧间变换，得到从起点开始的里程计
+        q_0_curr = q_0_last * q_last_curr ;
+        t_0_curr = t_0_last + q_0_last * t_last_curr;
+        q_0_last = q_0_curr;
+        t_0_last = t_0_curr;
+        //发布里程计
+        nav_msgs::msg::Odometry LO;
+        LO.header.frame_id = "map";
+        LO.child_frame_id = "base_link";
+        LO.header.stamp = currHead.stamp;
+        LO.pose.pose.position.x = t_0_curr[0];
+        LO.pose.pose.position.y = t_0_curr[1];
+        LO.pose.pose.position.z = t_0_curr[2];
+        LO.pose.pose.orientation.x = q_0_curr.x();
+        LO.pose.pose.orientation.y = q_0_curr.y();
+        LO.pose.pose.orientation.z = q_0_curr.z();
+        LO.pose.pose.orientation.w = q_0_curr.w();
 
-        pcl::PointCloud<PointType>::Ptr cloud_temp = boost::make_shared<pcl::PointCloud<PointType>>();
-        downSizeFilterMap.setInputCloud(sumPlaneCloudPtr);
-        downSizeFilterMap.filter(*cloud_temp);
+        LO.pose.covariance = {
+        0.001,      0.0,        0.0,        0.0,        0.0,        0.0,
+        0.0,        0.001,      0.0,        0.0,        0.0,        0.0,
+        0.0,        0.0,        1000000.0,  0.0,        0.0,        0.0,
+        0.0,        0.0,        0.0,        1000000.0,  0.0,        0.0,
+        0.0,        0.0,        0.0,        0.0,        1000000.0,  0.0,
+        0.0,        0.0,        0.0,        0.0,        0.0,        1000.0};
+        LO.twist.covariance = {
+        0.001,      0.0,        0.0,        0.0,        0.0,        0.0,
+        0.0,        0.001,      0.0,        0.0,        0.0,        0.0,
+        0.0,        0.0,        1000000.0,  0.0,        0.0,        0.0,
+        0.0,        0.0,        0.0,        1000000.0,  0.0,        0.0,
+        0.0,        0.0,        0.0,        0.0,        1000000.0,  0.0,
+        0.0,        0.0,        0.0,        0.0,        0.0,        1000.0};
 
-        sensor_msgs::msg::PointCloud2 res_cloud_msgs;
-        pcl::toROSMsg(*cloud_temp, res_cloud_msgs);
-        res_cloud_msgs.header.stamp = LO.header.stamp;
-        res_cloud_msgs.header.frame_id = "map";
-        pub_sum_lidar_odom_cloud->publish(res_cloud_msgs);
-   }
+        pub_frame_odometry->publish(LO);
+        //发布里轨迹
+        geometry_msgs::msg::PoseStamped pose_stamped;
+        pose_stamped.header.stamp = LO.header.stamp;
+        pose_stamped.header.frame_id = "map";
+        pose_stamped.pose = LO.pose.pose;
+        lidarPathInOdom.poses.push_back(pose_stamped);
+        lidarPathInOdom.header.stamp=LO.header.stamp;
+        lidarPathInOdom.header.frame_id="map";
+        pub_frame_odom_path->publish(lidarPathInOdom);
+        //发布平面特征点云
+        sensor_msgs::msg::PointCloud2 plane_frame_cloud_msgs;
+        pcl::toROSMsg(*currFramePlanePtr, plane_frame_cloud_msgs);
+        plane_frame_cloud_msgs.header.stamp = LO.header.stamp;
+        plane_frame_cloud_msgs.header.frame_id = "map";
+        pub_plane_frame_cloud->publish(plane_frame_cloud_msgs);
+        //发布拼接点云地图
+        if(numFrame % 5 == 0)
+        {
+            double r,p,y;
+            tf2::Quaternion tq(q_0_curr.x(),q_0_curr.y(),q_0_curr.z(),q_0_curr.w());
+            tf2::Matrix3x3(tq).getRPY(r,p,y);
+            Eigen::Affine3d transCurd;
+            pcl::getTransformation(t_0_curr.x(), t_0_curr.y(), t_0_curr.z(), r,p,y,transCurd);
+            pcl::PointCloud<PointType>::Ptr cloud_res = boost::make_shared<pcl::PointCloud<PointType>>();
+            pcl::transformPointCloud(*currFramePlanePtr, *cloud_res, transCurd);
+            *sumPlaneCloudPtr += *cloud_res;
+
+            pcl::PointCloud<PointType>::Ptr cloud_temp = boost::make_shared<pcl::PointCloud<PointType>>();
+            downSizeFilterMap.setInputCloud(sumPlaneCloudPtr);
+            downSizeFilterMap.filter(*cloud_temp);
+
+            sensor_msgs::msg::PointCloud2 res_cloud_msgs;
+            pcl::toROSMsg(*cloud_temp, res_cloud_msgs);
+            res_cloud_msgs.header.stamp = LO.header.stamp;
+            res_cloud_msgs.header.frame_id = "map";
+            pub_sum_lidar_odom_cloud->publish(res_cloud_msgs);
+    }
+    //发布坐标
+    geometry_msgs::msg::TransformStamped t;
+    t.header.stamp = currHead.stamp;
+    t.header.frame_id = "map";
+    t.child_frame_id = "base_link";
+    t.transform.translation.x = t_0_curr[0];
+    t.transform.translation.y = t_0_curr[1];
+    t.transform.translation.z = t_0_curr[2];
+    t.transform.rotation.x = q_0_curr.x();
+    t.transform.rotation.y = q_0_curr.y();
+    t.transform.rotation.z = q_0_curr.z();
+    t.transform.rotation.w = q_0_curr.w();
+    tf_broadcaster_->sendTransform(t);
 }
 
 //计算帧帧配准，得到帧间位姿变换
