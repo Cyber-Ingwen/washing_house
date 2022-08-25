@@ -14,13 +14,12 @@ def generate_launch_description():
         package="sloam",
         executable="lidarOdometry"
         )
-    
-    rviz_config_file = os.path.join(share_dir, 'config', 'rviz2.rviz')
+
     Node(
             package='rviz2',
             executable='rviz2',
             name='rviz2',
-            arguments=['-d', rviz_config_file],
+            arguments=[],
             output='screen'
         )
     
