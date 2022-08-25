@@ -5,8 +5,6 @@
 ```sh
 sudo apt-get update
 sudo apt-get install -y libyaml-cpp-dev libpcap-dev libomp-dev can-utils  libasio-dev 
-sudo apt-get install libpcl-dev ros-${ROS_DISTRO}-pcl-conversions 
-
 ```
 
 ```sh
@@ -54,7 +52,13 @@ echo source install/setup.bash >> ~/.bashrc
     ```sh
     bash src/hunter_ros2/ugv_sdk/scripts/bringup_can2usb_start_hunter_node.bash
     ```
-# 1.Data from ros2 bagSS
+
+* Fix PCL
+    ```sh
+    sudo apt update
+    sudo apt-get install libpcl-dev ros-${ROS_DISTRO}-pcl-conversions 
+    ```
+# 1.Data from ros2 bag
 
 ```sh
 ros2 launch rslidar_sdk start_offline.py
