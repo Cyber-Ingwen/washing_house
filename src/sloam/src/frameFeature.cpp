@@ -34,7 +34,7 @@ class FrameFeature: public rclcpp::Node
             std::string topic_name = "/rslidar_points";
             subLaserCloud = this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 100, std::bind(&FrameFeature::cloudHandler, this, std::placeholders::_1));
         
-            pub_plane_frame_cloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/plane_frame_cloud1", 100);
+            pub_plane_frame_cloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/plane_points", 100);
             pub_org_frame_cloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/org_frame_cloud1", 100);
 
             downSizeFilterPlane.setLeafSize(0.2,0.2,0.2);
@@ -140,7 +140,7 @@ void FrameFeature::cloudHandler(const sensor_msgs::msg::PointCloud2::SharedPtr c
     downSizeFilterPlane.filter(*cloud_temp);
     //发布平面特征点云
     sensor_msgs::msg::PointCloud2 planeCloudMsg;
-    pcl::toROSMsg(*framePlanePtr, planeCloudMsg);      //将pcl点云对象转换为ros点云消息类型
+    pcl::toROSMsg(*cloud_temp, planeCloudMsg);      //将pcl点云对象转换为ros点云消息类型
     planeCloudMsg.header.stamp = cldMsg->header.stamp;
     planeCloudMsg.header.frame_id = "map";
     pub_plane_frame_cloud->publish(planeCloudMsg);

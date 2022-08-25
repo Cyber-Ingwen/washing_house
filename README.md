@@ -41,15 +41,17 @@ echo source install/setup.bash >> ~/.bashrc
     rm -r boost_1_80_0 boost_1_80_0.tar.gz
     ```
 
-* CAN-USB First Setup
+* CAN-USB Setup
     ```sh
     bash src/hunter_ros2/ugv_sdk/scripts/setup_can2usb.bash
     ```
-* CAN-USB Everytime Setup
-    ```sh
-    bash src/hunter_ros2/ugv_sdk/scripts/bringup_can2usb_500k.bash
-    ```
 
+* Start Hunter Node 
+    Control chassis by geometry_msgs/msg/Twist in topic /cmd_vel
+    Hunter Node publish odom info by nav_msgs/msg/Odometry in topic odom
+    ```sh
+    bash src/hunter_ros2/ugv_sdk/scripts/bringup_can&start_hunter_node.bash
+    ```
 # 1.Data from ros2 bagSS
 
 ```sh
