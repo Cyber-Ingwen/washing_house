@@ -87,14 +87,11 @@ void MapOptmization::imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     new_msg.angular_velocity.y = msg_ptr->angular_velocity.y - 0.0831042;
     new_msg.angular_velocity.z = msg_ptr->angular_velocity.z - 0.0688892;
 
-    new_msg.angular_velocity_covariance = {
-        0.01,      0.0,       0.0,        
-        0.0,       0.01,      0.0,        
-        0.0,       0.0,       0.01};
-    new_msg.linear_acceleration_covariance = {
-        1.0,      0.0,      0.0,        
-        0.0,      1.0,      0.0,        
-        0.0,      0.0,      1.0};
+    new_msg.orientation_covariance = {1000000.0, 0, 0,
+                                    0, 1000000, 0,
+                                    0, 0, 0.000001};
+    new_msg.angular_velocity_covariance = new_msg.orientation_covariance;
+    new_msg.linear_acceleration_covariance = {-1,0,0,0,0,0,0,0,0};
 
     pub_imu->publish(new_msg);
 
@@ -110,7 +107,7 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     auto ay = msg_ptr->linear_acceleration.y + 0.265;
     auto az = msg_ptr->linear_acceleration.z;
     auto g = 9.816;
-    cout << "加速度：" << ax << " " << ay << " " << az << endl;
+    // cout << "加速度：" << ax << " " << ay << " " << az << endl;
 
     // 姿态
     auto acc_roll = -atan2(ay, az);
@@ -158,7 +155,7 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     pitch = (1 - k * delta_t) * pitch + k * delta_t * acc_pitch + omega_y * delta_t;
     yaw = yaw + omega_z * delta_t;
 
-    cout << "姿态：" << roll << " " << pitch << " " << yaw << endl;
+    // cout << "姿态：" << roll << " " << pitch << " " << yaw << endl;
 
     // 位置
     Matrix3f R;
@@ -173,7 +170,7 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     ay = a_global(1);
     az = a_global(2) - g;
 
-    cout << "加速度：" << ax << " " << ay << " " << az << endl;
+    // cout << "加速度：" << ax << " " << ay << " " << az << endl;
 
     vx = vx + ax * delta_t;
     vy = vy + ay * delta_t;
@@ -202,7 +199,7 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     IO.pose.pose.orientation.z = sy * cp * cr - cy * sp * sr;
     IO.pose.pose.orientation.w = cy * cp * cr + sy * sp * sr;
 
-    cout << "位置：" << x << " " << y << " " << z << endl;
+    // cout << "位置：" << x << " " << y << " " << z << endl;
 
     pub_imu2odom->publish(IO);
 }

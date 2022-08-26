@@ -45,14 +45,14 @@ def generate_launch_description():
             cmd=['ros2', 'bag', 'play', 'bag/bag.db3'],
             output='screen'
         ),
-        frameFeature_node, lidarOdometry_node, rviz_node,
-        launch_ros.actions.Node(
-            package='robot_localization',
-            executable='ekf_node',
-            name='ekf_filter_node',
-            output='screen',
-            parameters=[os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')],
-           ),
+        frameFeature_node, lidarOdometry_node, MapOptmization_node, rviz_node,
+        # launch_ros.actions.Node(
+        #     package='robot_localization',
+        #     executable='ekf_node',
+        #     name='ekf_filter_node',
+        #     output='screen',
+        #     parameters=[os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')],
+        #    ),
         ])
         
     return launch_description
