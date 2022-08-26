@@ -4,15 +4,9 @@ import launch
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from ament_index_python.packages import get_package_share_directory
 import launch_ros.actions
 import os
-import yaml
-from launch.substitutions import EnvironmentVariable
-import pathlib
 import launch.actions
-from launch.actions import DeclareLaunchArgument
 
 
 def generate_launch_description():
@@ -48,17 +42,17 @@ def generate_launch_description():
             output='screen'
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', '-l','bag/bag.db3'],
+            cmd=['ros2', 'bag', 'play', 'bag/bag.db3'],
             output='screen'
         ),
         frameFeature_node, lidarOdometry_node, rviz_node,
-        # launch_ros.actions.Node(
-        #     package='robot_localization',
-        #     executable='ekf_node',
-        #     name='ekf_filter_node',
-        #     output='screen',
-        #     parameters=[os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')],
-        #    ),
+        launch_ros.actions.Node(
+            package='robot_localization',
+            executable='ekf_node',
+            name='ekf_filter_node',
+            output='screen',
+            parameters=[os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')],
+           ),
         ])
         
     return launch_description
