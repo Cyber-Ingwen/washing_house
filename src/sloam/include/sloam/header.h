@@ -17,6 +17,7 @@
 #include "sensor_msgs/msg/imu.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
 #include <tf2/LinearMath/Quaternion.h>
