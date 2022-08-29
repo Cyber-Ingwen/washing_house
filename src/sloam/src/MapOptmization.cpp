@@ -27,6 +27,7 @@ class MapOptmization: public rclcpp::Node
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_map;
         rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pub_map;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_map_test;
 
         std_msgs::msg::Header hd;
 
@@ -51,6 +52,7 @@ MapOptmization::MapOptmization(std::string name): Node(name)
 
     sub_map = this->create_subscription<sensor_msgs::msg::PointCloud2>("/sum_lidar_odom_cloud2", 100, std::bind(&MapOptmization::mapHandler, this, std::placeholders::_1));
     pub_map = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/map", 100);
+    pub_map_test = this->create_publisher<sensor_msgs::msg::PointCloud2>("/map_test", 100);
 
     RCLCPP_INFO(this->get_logger(), "\033[1;32m----> MapOptmization Started.\033[0m");
 }
@@ -249,7 +251,7 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
         {
             int ind = height * width - ((int(y) + width/2) % height) * height + int(x) + width/2;
             occ_list[ind] = 10;
-            if(z > -0.5 && z < 2)
+            if(z > 0.5 && z < 3)
             {
                 occ_list[ind] = 100;
             }
@@ -260,6 +262,26 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
     {
         myMap.data.push_back(int8_t(occ_list[i]));
     }
+
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_temp = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    for (int i = 0; i < cloud->points.size(); i++)
+    {
+        float x = cloud->points[i].x;
+        float y = cloud->points[i].y;
+        float z = cloud->points[i].z;
+        if ((x < width/2) && (y < width/2) && (x > -width/2) && (y > -width/2))
+        {
+            if(z > 0.5 && z < 3)
+            {
+                cloud_temp->push_back(cloud->points[i]);
+            }
+        }
+    }
+    
+    sensor_msgs::msg::PointCloud2 res_cloud_msgs;
+    pcl::toROSMsg(*cloud_temp, res_cloud_msgs);
+    res_cloud_msgs.header.frame_id = "map";
+    pub_map_test->publish(res_cloud_msgs);
 
     myMap.header.frame_id = "map";
     pub_map->publish(myMap);
