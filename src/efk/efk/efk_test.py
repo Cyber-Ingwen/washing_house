@@ -4,23 +4,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from rotations import angle_normalize, rpy_jacobian_axis_angle, skew_symmetric, Quaternion
 
-#### 1. Data ###################################################################################
-
-################################################################################################
-# This is where you will load the data from the pickle files. For parts 1 and 2, you will use
-# p1_data.pkl. For Part 3, you will use pt3_data.pkl.
-################################################################################################
-#Part1 + Part2
-''' 
-with open('data/pt1_data.pkl', 'rb') as file:
-    data = pickle.load(file)
-'''
-
-#Part3 
-with open('data/pt3_data.pkl', 'rb') as file:
-    data = pickle.load(file)
-
-
 ################################################################################################
 # Each element of the data dictionary is stored as an item from the data dictionary, which we
 # will store in local variables, described by the following:
@@ -48,7 +31,7 @@ with open('data/pt3_data.pkl', 'rb') as file:
 gt = data['gt']
 imu_f = data['imu_f']
 imu_w = data['imu_w']
-gnss = data['gnss']
+#gnss = data['gnss']
 lidar = data['lidar']
 
 #print("GNSS data: \n", gnss.data)
