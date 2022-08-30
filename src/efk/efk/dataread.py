@@ -16,7 +16,7 @@ from kalman import KalmanFliter
 
 
 
-class Node_PC(Node):
+class Node_kf(Node):
     def __init__(self,name):
         super().__init__(name)
         self.get_logger().info("节点已创建")
@@ -43,13 +43,20 @@ class Node_PC(Node):
         self.last_vel_x = 0
         self.last_vel_y = 0
         self.last_vel_z = 0
+        self.x_clo = 0
+        self.y_clo = 0
+        self.z_clo = 0
+
+        KalmanFliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
 
     def callback1(self, data):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
         self.pcn = self.label(pcd_as_numpy_array)
-        
+        self.x_clo = self.pcn[0]
+        self.y_clo = self.pcn[1]
+        self.z_clo = self.pcn[2]
 
         """可视化点云"""
         self.vis.remove_geometry(self.o3d_pcd_curv)
@@ -73,7 +80,7 @@ class Node_PC(Node):
         y_angle = data.angular_velocity.y
         z_angle = data.angular_velocity.z
         #print("1")
-       
+        self.imu_position_volcity(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
         
     
     def imu_position_volcity(self,x_linear,y_linear,z_linear,x_angle,y_angle,z_angle):
@@ -94,8 +101,9 @@ class Node_PC(Node):
         z_2 = mahony.R[1][2] 
         z_3 = mahony.R[2][2] 
         self.p_x_0 = self.p_x_0 * x_1 + self.p_x_0 * x_2 + self.p_x_0 * x_3 + 0.015 * x_linear - 0.005 * self.last_vel_x
-        self.p_y_0 = self.p_y_0 * y_1 + self.p_y_0 * y_2 + self.p_y_0 * x_3 + 0.015 * y_linear - 0.005 * self.last_vel_y
-        self.p_z_0 = self.p_z_0 * z_1 + self.p_z_0 * z_2 + self.p_z_0 * x_3 + 0.015 * z_linear - 0.005 * self.last_vel_z
+        self.p_y_0 = self.p_y_0 * y_1 + self.p_y_0 * y_2 + self.p_y_0 * y_3 + 0.015 * y_linear - 0.005 * self.last_vel_y
+        self.p_z_0 = self.p_z_0 * z_1 + self.p_z_0 * z_2 + self.p_z_0 * z_3 + 0.015 * z_linear - 0.005 * self.last_vel_z
+        return 1
 
     def label(self, pcn):
         """给点云标注角度和线"""
@@ -230,7 +238,7 @@ class Solution():
 
 def main(args = None):
     rclpy.init(args = args)
-    node = Node_PC("point_cloud")
+    node = Node_kf("dataread")
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
