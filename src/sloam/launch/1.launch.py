@@ -42,10 +42,11 @@ def generate_launch_description():
             output='screen'
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', 'bag/bag.db3'],
+            cmd=['ros2', 'bag', 'play', 'bag/imu0.db3'],
             output='screen'
         ),
-        frameFeature_node, lidarOdometry_node, MapOptmization_node, rviz_node,
+        frameFeature_node, lidarOdometry_node, rviz_node,
+        # MapOptmization_node,
         # launch_ros.actions.Node(
         #     package='robot_localization',
         #     executable='ekf_node',

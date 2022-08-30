@@ -10,6 +10,9 @@ class MapOptmization: public rclcpp::Node
     创建MapOptmization节点 
     */
     public:
+        int count;
+        double mean;
+        double var;
 
         double x, y, z;
         double vx, vy, vz;
@@ -35,7 +38,12 @@ class MapOptmization: public rclcpp::Node
         void odomHandler(const nav_msgs::msg::Odometry::SharedPtr msg_ptr);
         void imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
         void mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
+
         void imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
+        void kalman(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
+        void cul_val_mean_var(double input);
+
+        ~MapOptmization(void){}
 };
 
 MapOptmization::MapOptmization(std::string name): Node(name)
@@ -165,6 +173,7 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     yaw = yaw + omega_z * delta_t;
 
     // cout << "姿态：" << roll << " " << pitch << " " << yaw << endl;
+    this->cul_val_mean_var(roll);
 
     // 位置
     Matrix3f R;
@@ -181,36 +190,54 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
 
     // cout << "加速度：" << ax << " " << ay << " " << az << endl;
 
-    vx = vx + ax * delta_t;
-    vy = vy + ay * delta_t;
-    vz = vz + az * delta_t;
+    // vx = vx + ax * delta_t;
+    // vy = vy + ay * delta_t;
+    // vz = vz + az * delta_t;
 
-    x = x + vx * delta_t;
-    y = y + vy * delta_t;
-    z = z + vz * delta_t;
+    // x = x + vx * delta_t;
+    // y = y + vy * delta_t;
+    // z = z + vz * delta_t;
 
-    auto cy = cos(yaw * 0.5);
-    auto sy = sin(yaw * 0.5);
-    auto cp = cos(pitch * 0.5);
-    auto sp = sin(pitch * 0.5);
-    auto cr = cos(roll * 0.5);
-    auto sr = sin(roll * 0.5);
+    // auto cy = cos(yaw * 0.5);
+    // auto sy = sin(yaw * 0.5);
+    // auto cp = cos(pitch * 0.5);
+    // auto sp = sin(pitch * 0.5);
+    // auto cr = cos(roll * 0.5);
+    // auto sr = sin(roll * 0.5);
 
-    nav_msgs::msg::Odometry IO;
-    IO.header.frame_id = "map";
-    IO.child_frame_id = "base_link";
-    IO.header.stamp = msg_ptr->header.stamp;
-    IO.pose.pose.position.x = x;
-    IO.pose.pose.position.y = y;
-    IO.pose.pose.position.z = z;
-    IO.pose.pose.orientation.x = cy * cp * sr - sy * sp * cr;
-    IO.pose.pose.orientation.y = sy * cp * sr + cy * sp * cr;
-    IO.pose.pose.orientation.z = sy * cp * cr - cy * sp * sr;
-    IO.pose.pose.orientation.w = cy * cp * cr + sy * sp * sr;
+    // nav_msgs::msg::Odometry IO;
+    // IO.header.frame_id = "map";
+    // IO.child_frame_id = "base_link";
+    // IO.header.stamp = msg_ptr->header.stamp;
+    // IO.pose.pose.position.x = x;
+    // IO.pose.pose.position.y = y;
+    // IO.pose.pose.position.z = z;
+    // IO.pose.pose.orientation.x = cy * cp * sr - sy * sp * cr;
+    // IO.pose.pose.orientation.y = sy * cp * sr + cy * sp * cr;
+    // IO.pose.pose.orientation.z = sy * cp * cr - cy * sp * sr;
+    // IO.pose.pose.orientation.w = cy * cp * cr + sy * sp * sr;
 
     // cout << "位置：" << x << " " << y << " " << z << endl;
 
-    pub_imu2odom->publish(IO);
+    // auto cy = cos(yaw * 0.5);
+    // auto sy = sin(yaw * 0.5);
+    // auto cp = cos(pitch * 0.5);
+    // auto sp = sin(pitch * 0.5);
+    // auto cr = cos(roll * 0.5);
+    // auto sr = sin(roll * 0.5);
+    // nav_msgs::msg::Odometry IO;
+    // IO.header.frame_id = "map";
+    // IO.child_frame_id = "base_link";
+    // IO.header.stamp = msg_ptr->header.stamp;
+    // IO.pose.pose.position.x = x;
+    // IO.pose.pose.position.y = y;
+    // IO.pose.pose.position.z = z;
+    // IO.pose.pose.orientation.x = cy * cp * sr - sy * sp * cr;
+    // IO.pose.pose.orientation.y = sy * cp * sr + cy * sp * cr;
+    // IO.pose.pose.orientation.z = sy * cp * cr - cy * sp * sr;
+    // IO.pose.pose.orientation.w = cy * cp * cr + sy * sp * sr;
+
+    // pub_imu2odom->publish(IO);
 }
 
 void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr)
@@ -285,6 +312,16 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
 
     myMap.header.frame_id = "map";
     pub_map->publish(myMap);
+}
+
+void MapOptmization::cul_val_mean_var(double input)
+{
+    count += 1;
+    var += mean * mean;
+    mean = mean * (count - 1) / double(count) + input / double(count);
+    var = var * (count - 1) / double(count) + input * input / double(count);
+    var -= mean * mean;
+    cout << "平均：" << mean << "方差：" << var << endl;
 }
 
 
