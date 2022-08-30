@@ -41,10 +41,10 @@ def generate_launch_description():
             name='rslidar_sdk_node',
             output='screen'
         ),
-        launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', 'bag/bag.db3'],
-            output='screen'
-        ),
+        # launch.actions.ExecuteProcess(
+        #     cmd=['ros2', 'bag', 'play', 'bag/rosbag2_2022_08_25-10_15_30/rosbag2_2022_08_25-10_15_30_0.db3'],
+        #     output='screen'
+        # ),
         frameFeature_node, lidarOdometry_node, MapOptmization_node, rviz_node,
         # launch_ros.actions.Node(
         #     package='robot_localization',
