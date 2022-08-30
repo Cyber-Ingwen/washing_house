@@ -12,6 +12,7 @@ import open3d as o3d
 import sys,os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
+from kalman import KalmanFliter
 
 
 
@@ -22,7 +23,8 @@ class Node_PC(Node):
 
         self.sub_point_cloud = self.create_subscription(PointCloud2, "/rslidar_points", self.callback1, 10)
         self.subscription = self.create_subscription(Imu,'/imu',self.callback2,10)
-        self.subscription  
+        self.kalmanfliter = KalmanFliter()
+
         
 
         """配置可视化"""
@@ -32,6 +34,15 @@ class Node_PC(Node):
         self.o3d_pcd_curv = o3d.geometry.PointCloud()
         self.ctr = self.vis.get_view_control()
 
+        self.v_x_0 = 0
+        self.v_y_0 = 0
+        self.v_z_0 = 0
+        self.p_x_0 = 0
+        self.p_y_0 = 0
+        self.p_z_0 = 0
+        self.last_vel_x = 0
+        self.last_vel_y = 0
+        self.last_vel_z = 0
 
     def callback1(self, data):
         """读取解析数据"""
@@ -62,19 +73,30 @@ class Node_PC(Node):
         y_angle = data.angular_velocity.y
         z_angle = data.angular_velocity.z
         #print("1")
-        m = mahony()
-        #print(x_linear,'--',y_linear,'--',z_linear,'/n',x_angle ,'--',y_angle,'--',z_angle,'/n')
-        m.mahony_imu(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
-        #print(x_l,'--',y_l,'--',z_l,'/n',x_a ,'--',y_a,'--',z_a,'/n')
-        #print(x_linear,'--',y_linear,'--',z_linear,'/n',x_angle ,'--',y_angle,'--',z_angle,'/n')
-        #x_linear=np.array(list(x_linear))
-        #print(data)
-        #print(data.angular_velocity.x)
-        #print(data.linear_acceleration.y)
-        #self.get_logger().info('节点已创建')
-        #k = IMUPublisher()
-        #k.timer_callback(x_angle,y_angle,z_angle,x_linear,y_linear,z_linear,m.q0,m.q1,m.q2,m.q3)
-   
+       
+        
+    
+    def imu_position_volcity(self,x_linear,y_linear,z_linear,x_angle,y_angle,z_angle):
+        self.last_vel_x = self.v_x_0
+        self.last_vel_y = self.v_y_0
+        self.last_vel_z = self.v_z_0
+        self.v_x_0 = self.v_x_0 + 0.01 * x_linear
+        self.v_y_0 = self.v_y_0 + 0.01 * y_linear
+        self.v_z_0 = self.v_z_0 + 0.01 * z_linear
+        mahony.mahony_imu(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
+        x_1 = mahony.R[0][0] 
+        x_2 = mahony.R[1][0] 
+        x_3 = mahony.R[2][0] 
+        y_1 = mahony.R[0][1] 
+        y_2 = mahony.R[1][1] 
+        y_3 = mahony.R[2][1] 
+        z_1 = mahony.R[0][2] 
+        z_2 = mahony.R[1][2] 
+        z_3 = mahony.R[2][2] 
+        self.p_x_0 = self.p_x_0 * x_1 + self.p_x_0 * x_2 + self.p_x_0 * x_3 + 0.015 * x_linear - 0.005 * self.last_vel_x
+        self.p_y_0 = self.p_y_0 * y_1 + self.p_y_0 * y_2 + self.p_y_0 * x_3 + 0.015 * y_linear - 0.005 * self.last_vel_y
+        self.p_z_0 = self.p_z_0 * z_1 + self.p_z_0 * z_2 + self.p_z_0 * x_3 + 0.015 * z_linear - 0.005 * self.last_vel_z
+
     def label(self, pcn):
         """给点云标注角度和线"""
         scan_mat = np.zeros(pcn.shape[0])
@@ -133,6 +155,7 @@ class mahony():
     integeral_x = 0.0 #integral error terms scaled by Ki
     integeral_y = 0.0
     integeral_z = 0.0
+    R = np.zeros((3,3))
     
     def mahony_imu(self,x_g,y_g,z_g,x_a,y_a,z_a):
         #print("2")
@@ -188,8 +211,8 @@ class mahony():
         value = [[1 - 2 * self.q2 * self.q2 - 2 * self.q3 * self.q3, 2 * self.q1 * self.q2 - 2 * self.q3 * self.q0,2 * self.q1 * self.q3 + 2 * self.q2 * self.q0], 
         [2 * self.q1 * self.q2 + 2 * self.q3 * self.q0, 1 - 2 * self.q1 * self.q1 - 2 * self.q3 * self.q3, 2 * self.q2 * self.q3 - 2 * self.q1 * self.q0],
         [2 * self.q1 * self.q3 - 2 * self.q2 * self.q0,2 * self.q2 * self.q3 + 2 * self.q1 * self.q0,1-2 * self.q1 * self.q1 - 2 * self.q2 * self.q2]]
-        R = np.array(value)
-        print(R)
+        self.R = np.array(value)
+        print(self.R)
         return 1
 
 class Solution():
