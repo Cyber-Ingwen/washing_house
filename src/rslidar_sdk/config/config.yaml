@@ -7,7 +7,7 @@ common:
                                                         #5: point cloud comes from Protobuf-UDP
   send_packet_ros: false                                #true: Send packets through ROS or ROS2(Used to record packet)
   send_point_cloud_ros: true                            #true: Send point cloud through ROS or ROS2
-  send_packet_proto: false                              #true: Send packets through Protobuf-UDP
+  send_packet_proto: false                              #true: Send packets through P rotobuf-UDP
   send_point_cloud_proto: false                         #true: Send point cloud through Protobuf-UDP
   pcap_path: /home/cidi/rslidar/lidar.pcap                 #The path of pcap file
 lidar:
