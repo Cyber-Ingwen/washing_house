@@ -31,7 +31,6 @@ class Kf_Params:
     # 大小取决于对观察过程的信任程度。如果观测结果中的坐标x值常常很准确，那么矩阵R的第一个值应该比较小
     R = np.diag(np.ones(3)) * 0.1
  
- 
 def kf_init(px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z):
     # 状态x为（坐标x， 坐标y，坐标z, 速度x， 速度y, 速度z），观测值z为（坐标x， 坐标y, 坐标z）
     kf_params = Kf_Params()
@@ -63,7 +62,7 @@ def kf_init(px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z):
 def kf_update(kf_params):
     #计算不考虑误差的预测值
     AA = np.dot(kf_params.A, kf_params.x.T) #6x1
-    BB = kf_params.B * kf_params.u #6x1
+    BB = np.dot(kf_params.B,kf_params.u) #6x1
     x_ = np.array(AA) + BB
     
     #计算先验的协方差
@@ -99,8 +98,17 @@ def KalmanFliter(px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z, x_clo, y_
     kf_record = []
     kf_p = []
     kalman_filter_params = kf_init(px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z)
-    kalman_filter_params.z = np.transpose([x_clo, y_clo, z_clo])  # 设置当前时刻的观测位置
+    kalman_filter_params.z = np.zeros((3,1))
+    kalman_filter_params.z[0] = x_clo
+    kalman_filter_params.z[0] = y_clo
+    kalman_filter_params.z[0] = z_clo
+    #kalman_filter_params.z = np.transpose([x_clo, y_clo, z_clo])  # 设置当前时刻的观测位置
+    print("----------------------------------------------")
+    print(kalman_filter_params.z)
+    print("**************************************************************")
     kalman_filter_params = kf_update(kalman_filter_params)  # 卡尔曼滤波
     kf_record.append(np.transpose(kalman_filter_params.x))
-    kf_p.append(np.transpose(kalman_filter_params.G)) 
-    return 1
+    kf_p.append(np.transpose(kalman_filter_params.G))
+    print(kf_p) 
+    return kf_p
+
