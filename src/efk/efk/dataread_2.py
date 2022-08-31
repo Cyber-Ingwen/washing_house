@@ -15,6 +15,8 @@ sys.path.append(BASE_DIR)
 #from kalman import KalmanFliter
 
 from kalman_test import Kalman
+from LOAM import LOAM
+from Cul_Curvature import Cul_Curvature
 
 class Node_kf(Node):
     def __init__(self):
@@ -49,6 +51,8 @@ class Node_kf(Node):
         #KalmanFliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
         self.m = Kalman()
         #self.m.Kalman_Fliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
+        self.Cul_Curv = ()
+        self.loam = LOAM()
 
     def callback1(self, data):
         """读取解析数据"""
@@ -59,11 +63,14 @@ class Node_kf(Node):
         # temp_1 = self.x_clo
         # temp_2 = self.y_clo
         # temp_3 = self.z_clo
-        for i in range(self.pcn.shape[0]):
+        self.loam.input(self.pcn)
+        self.curv_pcn = self.loam.output(self.pcn)
+        print(self.curv_pcn)
+        '''for i in range(self.pcn.shape[0]):
             self.x_clo = self.pcn[i][0]
             self.y_clo = self.pcn[i][1]
             self.z_clo = self.pcn[i][2]
-            print(self.pc_msg.header)
+            print(self.pc_msg.header)'''
         #print(self.pc_msg.header)
 
         # """可视化点云"""

@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'dataread = efk.dataread:main'
+            'dataread = efk.dataread:main',
+            'dataread_2 = efk.dataread_2:main'
         ],
     },
 )

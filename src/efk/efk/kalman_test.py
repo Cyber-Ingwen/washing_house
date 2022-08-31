@@ -102,12 +102,12 @@ class Kalman:
         kalman_filter_params.z[1] = y_clo
         kalman_filter_params.z[2] = z_clo
         #kalman_filter_params.z = np.transpose([x_clo, y_clo, z_clo])  # 设置当前时刻的观测位置
-        print("----------------------------------------------")
-        print(kalman_filter_params.z)
-        print("**************************************************************")
+        #print("----------------------------------------------")
+        #print(kalman_filter_params.z)
+        #print("**************************************************************")
         kalman_filter_params = self.kf_update()  # 卡尔曼滤波
         kf_record.append(np.transpose(kalman_filter_params.x))
         kf_p.append(np.transpose(kalman_filter_params.G))
-        print(kf_p) 
+        #print(kf_p) 
         return kf_p
 
