@@ -10,6 +10,9 @@ class MapOptmization: public rclcpp::Node
     创建MapOptmization节点 
     */
     public:
+        int count;
+        double mean;
+        double var;
 
         double x, y, z;
         double vx, vy, vz;
@@ -35,7 +38,12 @@ class MapOptmization: public rclcpp::Node
         void odomHandler(const nav_msgs::msg::Odometry::SharedPtr msg_ptr);
         void imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
         void mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
+
         void imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
+        void kalman(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
+        void cul_val_mean_var(double input);
+
+        ~MapOptmization(void){}
 };
 
 MapOptmization::MapOptmization(std::string name): Node(name)
@@ -104,7 +112,7 @@ void MapOptmization::imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
 
     pub_imu->publish(new_msg);
 
-    // this->imu2odom(msg_ptr);
+    this->imu2odom(msg_ptr);
 }
 
 void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
@@ -116,55 +124,21 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     auto ay = msg_ptr->linear_acceleration.y + 0.265;
     auto az = msg_ptr->linear_acceleration.z;
     auto g = 9.816;
-    // cout << "加速度：" << ax << " " << ay << " " << az << endl;
+    cout << "加速度：" << ax << " " << ay << " " << az << endl;
 
     // 姿态
     auto acc_roll = -atan2(ay, az);
     auto acc_pitch = asinh(ax / g);
 
-    // if (filter_init_flag == 0)
-    // {
-    //     filtered_ax = ax;
-    //     filtered_ay = ay;
-    //     filtered_az = az;
-
-    //     filter_init_flag = 1;
-    // }
-    // else
-    // {
-    //     filtered_ax = (1 - k * delta_t) * filtered_ax + k * delta_t * ax;
-    //     filtered_ay = (1 - k * delta_t) * filtered_ay + k * delta_t * ay;
-    //     filtered_az = (1 - k * delta_t) * filtered_az + k * delta_t * az;
-    // }
-
-    // cout << "滤波加速度：" << filtered_ax << " " << filtered_ay << " " << filtered_az << endl;
-
     auto omega_x = msg_ptr->angular_velocity.x - 0.0182214;
     auto omega_y = msg_ptr->angular_velocity.y - 0.0831042;
     auto omega_z = msg_ptr->angular_velocity.z - 0.0688892;
-
-    // if (filter_init_flag == 0)
-    // {
-    //     filtered_ax = omega_x;
-    //     filtered_ay = omega_x;
-    //     filtered_az = omega_x;
-
-    //     filter_init_flag = 1;
-    // }
-    // else
-    // {
-    //     filtered_ax = (1 - k * delta_t) * filtered_ax + k * delta_t * omega_x;
-    //     filtered_ay = (1 - k * delta_t) * filtered_ay + k * delta_t * omega_y;
-    //     filtered_az = (1 - k * delta_t) * filtered_az + k * delta_t * omega_z;
-    // }
-
-    // cout << "滤波角速度：" << filtered_ax << " " << filtered_ay << " " << filtered_az << endl;
 
     roll = (1 - k * delta_t) * roll + k * delta_t * acc_roll + omega_x * delta_t;
     pitch = (1 - k * delta_t) * pitch + k * delta_t * acc_pitch + omega_y * delta_t;
     yaw = yaw + omega_z * delta_t;
 
-    // cout << "姿态：" << roll << " " << pitch << " " << yaw << endl;
+    this->cul_val_mean_var(roll);
 
     // 位置
     Matrix3f R;
@@ -173,13 +147,13 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
          sin(roll)*sin(pitch)*cos(yaw) + sin(yaw)*cos(roll), -sin(roll)*sin(pitch)*sin(yaw) + cos(roll)*cos(yaw), -sin(roll)*cos(pitch),
          sin(roll)*sin(yaw) - sin(pitch)*cos(roll)*cos(yaw), sin(roll)*cos(yaw) + sin(pitch)*sin(yaw)*cos(roll), cos(roll)*cos(pitch);
     a_vect << ax, ay, az;
-    a_global = R.inverse() * a_vect.matrix();
+    a_global = R * a_vect.matrix();
 
     ax = a_global(0);
     ay = a_global(1);
     az = a_global(2) - g;
 
-    // cout << "加速度：" << ax << " " << ay << " " << az << endl;
+    cout << "加速度：" << ax << " " << ay << " " << az << endl;
 
     vx = vx + ax * delta_t;
     vy = vy + ay * delta_t;
@@ -188,6 +162,8 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     x = x + vx * delta_t;
     y = y + vy * delta_t;
     z = z + vz * delta_t;
+
+    cout << "位置：" << x << " " << y << " " << z << endl;
 
     auto cy = cos(yaw * 0.5);
     auto sy = sin(yaw * 0.5);
@@ -207,8 +183,6 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     IO.pose.pose.orientation.y = sy * cp * sr + cy * sp * cr;
     IO.pose.pose.orientation.z = sy * cp * cr - cy * sp * sr;
     IO.pose.pose.orientation.w = cy * cp * cr + sy * sp * sr;
-
-    // cout << "位置：" << x << " " << y << " " << z << endl;
 
     pub_imu2odom->publish(IO);
 }
@@ -285,6 +259,16 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
 
     myMap.header.frame_id = "map";
     pub_map->publish(myMap);
+}
+
+void MapOptmization::cul_val_mean_var(double input)
+{
+    count += 1;
+    var += mean * mean;
+    mean = mean * (count - 1) / double(count) + input / double(count);
+    var = var * (count - 1) / double(count) + input * input / double(count);
+    var -= mean * mean;
+    cout << "平均：" << mean << "方差：" << var << endl;
 }
 
 
