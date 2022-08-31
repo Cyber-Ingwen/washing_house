@@ -20,7 +20,7 @@ def generate_launch_description():
         package="sloam",
         executable="lidarOdometry"
         )
-        
+
     rviz_node = Node(
             package='rviz2',
             executable='rviz2',
@@ -36,20 +36,12 @@ def generate_launch_description():
             name='rslidar_sdk_node',
             output='screen'
         ),
-<<<<<<< HEAD
-        # launch.actions.ExecuteProcess(
-        #     cmd=['ros2', 'bag', 'play', 'bag/rosbag2_2022_08_25-10_15_30/rosbag2_2022_08_25-10_15_30_0.db3'],
-        #     output='screen'
-        # ),
-        frameFeature_node, lidarOdometry_node,  rviz_node,
-=======
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', "-l", 'bag/bag.db3'],
+            cmd=['ros2', 'bag', 'play', "-l", 'bag/bag/bag.db3'],
             output='screen'
         ),
         frameFeature_node, lidarOdometry_node, rviz_node,
         # MapOptmization_node,
->>>>>>> 0877e7deb836a3058fbeceeda2ccb8a78172c05d
         # launch_ros.actions.Node(
         #     package='robot_localization',
         #     executable='ekf_node',
