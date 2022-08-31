@@ -42,7 +42,7 @@ def generate_launch_description():
             output='screen'
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', 'bag/imu0.db3'],
+            cmd=['ros2', 'bag', 'play', "-l", 'bag/bag.db3'],
             output='screen'
         ),
         frameFeature_node, lidarOdometry_node, rviz_node,
