@@ -16,7 +16,7 @@ class KalmanFilterNode(Node):
         self.sub_odom = self.create_subscription(Odometry, "/frame_odom2", self.callback_odom, 10)
         
         self.filter = ESKalmanFilter()
-        self.inputs = None
+        self.inputs = [1, 1]
         self.recive_odom_flag = 0
         
     def callback_imu(self, data):
@@ -39,6 +39,8 @@ class KalmanFilterNode(Node):
         q4 = data.pose.pose.orientation.w
         Rq = [q1, q2, q3, q4]
         Rm = R.from_quat(Rq)
+        Rm = Rm.as_matrix()
+        Rm = np.array(Rm)
         theta = logm(Rm)
         
         odom_data = [x, y, z, theta[2, 1], theta[0, 2], theta[1, 0]]
@@ -50,7 +52,7 @@ class KalmanFilterNode(Node):
         
 
 class ESKalmanFilter():
-    def init(self):
+    def __init__(self):
         self.delta_t = 0.01
         self.P = 0.01 * np.eye(18)
         self.Q = 0.01 * np.eye(18)
@@ -97,7 +99,6 @@ class ESKalmanFilter():
         Rot = self._exp(theta)
         
         R1_matrix = -Rot @ self._get_skew(a - ba) * self.delta_t
-        R1_matrix = self._exp(Rot)
         R2_matrix = -Rot * self.delta_t
         E_matrix = self._exp(-(omega - bg) * self.delta_t)
         
@@ -128,8 +129,6 @@ class ESKalmanFilter():
         return h1 @ h2
         
     def _get_skew(self, x):
-        if(x.shape != (3, 3)): print("warning:", x.shape)
-        
         return np.array([[0, -x[2], x[1]],
                          [x[2], 0, -x[0]],
                          [-x[1], x[0], 0]])
@@ -139,10 +138,13 @@ class ESKalmanFilter():
     
     def _get_jacobi(self, theta):
         a = np.linalg.norm(theta)
-        b = theta / a
-        
-        temp = 0.5 * a * (1 / np.tan(0.5 * a))
-        j = temp * np.eye(3) + (1 - temp) * b * b.T + 0.5 * a * self._get_skew(b)
+        if (a != 0):
+            b = theta / a
+            
+            temp = 0.5 * a * (1 / np.tan(0.5 * a))
+            j = temp * np.eye(3) + (1 - temp) * b * b.T + 0.5 * a * self._get_skew(b)
+        else:
+            j = 0 * np.eye(3)
         
         return j
         
