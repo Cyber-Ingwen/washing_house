@@ -12,27 +12,28 @@ import open3d as o3d
 import sys,os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
-from kalman import KalmanFliter
+#from kalman import KalmanFliter
+
+from kalman_test import Kalman
 
 
 
 class Node_kf(Node):
-    def __init__(self,name):
-        super().__init__(name)
-        self.get_logger().info("节点已创建")
-
-        self.sub_point_cloud = self.create_subscription(PointCloud2, "/rslidar_points", self.callback1, 10)
+    def __init__(self):
+        super().__init__('dataread')
+        self.sub_point_cloud = self.create_subscription(PointCloud2, '/rslidar_points', self.callback1, 10)
         self.subscription = self.create_subscription(Imu,'/imu',self.callback2,10)
-        self.kalmanfliter = KalmanFliter()
-
+        self.subscription
+        #self.kalmanfliter = KalmanFliter()
+        self.get_logger().info("节点已创建")
         
 
-        """配置可视化"""
-        self.vis = o3d.visualization.Visualizer()
-        self.vis.create_window()
-        self.o3d_pcd = o3d.geometry.PointCloud()
-        self.o3d_pcd_curv = o3d.geometry.PointCloud()
-        self.ctr = self.vis.get_view_control()
+        # """配置可视化"""
+        # self.vis = o3d.visualization.Visualizer()
+        # self.vis.create_window()
+        # self.o3d_pcd = o3d.geometry.PointCloud()
+        # self.o3d_pcd_curv = o3d.geometry.PointCloud()
+        # self.ctr = self.vis.get_view_control()
 
         self.v_x_0 = 0
         self.v_y_0 = 0
@@ -46,30 +47,32 @@ class Node_kf(Node):
         self.x_clo = 0
         self.y_clo = 0
         self.z_clo = 0
-
-        KalmanFliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
+        #KalmanFliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
+        self.m = Kalman()
+        #self.m.Kalman_Fliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
 
     def callback1(self, data):
         """读取解析数据"""
         assert isinstance(data, PointCloud2)
         pcd_as_numpy_array = np.array(list(self.read_points(data)))
         self.pcn = self.label(pcd_as_numpy_array)
-        self.x_clo = self.pcn[0]
-        self.y_clo = self.pcn[1]
-        self.z_clo = self.pcn[2]
+        for i in range(self.pcn.shape[0]):
+            self.x_clo = self.pcn[i][0]
+            self.y_clo = self.pcn[i][1]
+            self.z_clo = self.pcn[i][2]
 
-        """可视化点云"""
-        self.vis.remove_geometry(self.o3d_pcd_curv)
-        self.vis.remove_geometry(self.o3d_pcd)
-        self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.pcn[:,:3]))
-        self.o3d_pcd_curv = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.curv_pcn[:,:3]))
-        self.o3d_pcd.paint_uniform_color([60/255, 80/255, 120/255])
-        self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
-        self.vis.add_geometry(self.o3d_pcd)
-        self.vis.add_geometry(self.o3d_pcd_curv)
-        #self.vis.run()
-        self.vis.update_renderer()
-        self.vis.poll_events()
+        # """可视化点云"""
+        # self.vis.remove_geometry(self.o3d_pcd_curv)
+        # self.vis.remove_geometry(self.o3d_pcd)
+        # self.o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.pcn[:,:3]))
+        # self.o3d_pcd_curv = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(self.curv_pcn[:,:3]))
+        # self.o3d_pcd.paint_uniform_color([60/255, 80/255, 120/255])
+        # self.o3d_pcd_curv.paint_uniform_color([255/255, 0/255, 0/255])
+        # self.vis.add_geometry(self.o3d_pcd)
+        # self.vis.add_geometry(self.o3d_pcd_curv)
+        # #self.vis.run()
+        # self.vis.update_renderer()
+        # self.vis.poll_events()
     
     def callback2(self, kk):
         data=kk
@@ -81,7 +84,7 @@ class Node_kf(Node):
         z_angle = data.angular_velocity.z
         #print("1")
         self.imu_position_volcity(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
-        
+        self.m.Kalman_Fliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
     
     def imu_position_volcity(self,x_linear,y_linear,z_linear,x_angle,y_angle,z_angle):
         self.last_vel_x = self.v_x_0
@@ -90,7 +93,8 @@ class Node_kf(Node):
         self.v_x_0 = self.v_x_0 + 0.01 * x_linear
         self.v_y_0 = self.v_y_0 + 0.01 * y_linear
         self.v_z_0 = self.v_z_0 + 0.01 * z_linear
-        mahony.mahony_imu(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
+        m = mahony()
+        m.mahony_imu(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
         x_1 = mahony.R[0][0] 
         x_2 = mahony.R[1][0] 
         x_3 = mahony.R[2][0] 
@@ -220,7 +224,7 @@ class mahony():
         [2 * self.q1 * self.q2 + 2 * self.q3 * self.q0, 1 - 2 * self.q1 * self.q1 - 2 * self.q3 * self.q3, 2 * self.q2 * self.q3 - 2 * self.q1 * self.q0],
         [2 * self.q1 * self.q3 - 2 * self.q2 * self.q0,2 * self.q2 * self.q3 + 2 * self.q1 * self.q0,1-2 * self.q1 * self.q1 - 2 * self.q2 * self.q2]]
         self.R = np.array(value)
-        print(self.R)
+        #print(self.R)
         return 1
 
 class Solution():
@@ -238,7 +242,11 @@ class Solution():
 
 def main(args = None):
     rclpy.init(args = args)
-    node = Node_kf("dataread")
+    node = Node_kf()
+    #KalmanFliter(node.p_x_0, node.p_y_0, node.p_z_0, node.v_x_0, node.v_y_0, node.v_z_0,node.last_vel_x, node.last_vel_y, node.last_vel_z, node.x_clo, node.y_clo, node.z_clo)
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
