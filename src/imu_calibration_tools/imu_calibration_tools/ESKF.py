@@ -25,8 +25,8 @@ class KalmanFilterNode(Node):
     
     def callback_odom(self, data):
         x = data.pose.pose.position.x
-        data.pose.pose.position.y = y
-        data.pose.pose.position.z = z
+        y = data.pose.pose.position.y
+        z = data.pose.pose.position.z
     
     def update(self):
         self.filter.update(self.inputs)
