@@ -3,7 +3,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 import numpy as np
-from scipy.linalg import expm
+from scipy.linalg import expm, logm
+from scipy.spatial.transform import Rotation as R
 
     
 class KalmanFilterNode(Node):
@@ -12,7 +13,7 @@ class KalmanFilterNode(Node):
         self.get_logger().info(name + "节点已创建")
         
         self.sub_imu = self.create_subscription(Imu, "/imu", self.callback_imu, 10)
-        self.sub_odom = self.create_subscription(Odometry, "/odom", self.callback_odom, 10)
+        self.sub_odom = self.create_subscription(Odometry, "/frame_odom2", self.callback_odom, 10)
         
         self.filter = ESKalmanFilter()
         self.inputs = None
@@ -22,14 +23,30 @@ class KalmanFilterNode(Node):
         a = [data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z]
         omega = [data.angular_velocity.x, data.angular_velocity.y, data.angular_velocity.z]
         imu_data = [a, omega]
+        self.inputs[0] = imu_data
+        
+        if self.recive_odom_flag == 1:
+            self.update()
     
     def callback_odom(self, data):
         x = data.pose.pose.position.x
         y = data.pose.pose.position.y
         z = data.pose.pose.position.z
+        
+        q1 = data.pose.pose.orientation.x
+        q2 = data.pose.pose.orientation.y
+        q3 = data.pose.pose.orientation.z
+        q4 = data.pose.pose.orientation.w
+        Rq = [q1, q2, q3, q4]
+        Rm = R.from_quat(Rq)
+        theta = logm(Rm)
+        
+        odom_data = [x, y, z, theta[2, 1], theta[0, 2], theta[1, 0]]
+        self.inputs[1] = odom_data
+        self.recive_odom_flag = 1
     
     def update(self):
-        self.filter.update(self.inputs)
+        res =  self.filter.update(self.inputs)
         
 
 class ESKalmanFilter():

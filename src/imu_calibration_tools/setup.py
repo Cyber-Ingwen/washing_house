@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "format_imu_pointcloud_node = imu_calibration_tools.main:main"
+            "format_imu_pointcloud_node = imu_calibration_tools.main:main",
+            "eskf_node = imu_calibration_tools.ESKF:main",
         ],
     },
 )
