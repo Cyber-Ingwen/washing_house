@@ -132,9 +132,9 @@ class ESKalmanFilter():
         
 class KalmanFilter():
     def __init__(self):
-        A = np.zeros([6, 6])
+        self.A = np.zeros([6, 6])
         self.B = np.zeros([6, 6])
-        H = np.zeros([3, 6])
+        self.H = np.zeros([3, 6])
         
         self.x = np.zeros([6])
         
@@ -144,13 +144,13 @@ class KalmanFilter():
         
     def update(self, inputs):
         [u, z] = inputs
-        x_pr = A @ self.x + self.B @ u
-        P_pr = A @ self.P @ A.T + self.Q 
-        K = P_pr @ H.T @ np.linalg.inv(H @ P_pr @ H.T + self.R)
-        x_po = x_pr + K @ (z - H @ x_pr)
+        x_pr = self.A @ self.x + self.B @ u
+        P_pr = self.A @ self.P @ self.A.T + self.Q 
+        K = P_pr @ self.H.T @ np.linalg.inv(self.H @ P_pr @ self.H.T + self.R)
+        x_po = x_pr + K @ (z - self.H @ x_pr)
         
         # self.P = P_pr + K @ (self.Q - H @ P_pr @ H.T) @ K.T
-        self.P = P_pr - K @ H @ P_pr
+        self.P = P_pr - K @ self.H @ P_pr
         self.x = x_po
         
         return x_po
