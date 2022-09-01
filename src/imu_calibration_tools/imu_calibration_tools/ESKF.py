@@ -1,3 +1,4 @@
+from cmath import pi
 import numpy as np
 import rclpy
 from nav_msgs.msg import Odometry, Path
@@ -24,10 +25,11 @@ class KalmanFilterNode(Node):
         self.recive_odom_flag = 0
         self.count = 0
         self.last_time = 0
+        self.last_z = None
         
     def callback_imu(self, data):
         a = [data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z]
-        omega = [data.angular_velocity.x, data.angular_velocity.y, data.angular_velocity.z]
+        omega = [data.angular_velocity.x * pi / 180, data.angular_velocity.y * pi / 180, data.angular_velocity.z * pi / 180]
         imu_data = [a, omega]
         self.inputs[0] = imu_data
         
@@ -47,7 +49,18 @@ class KalmanFilterNode(Node):
         Rm = np.array(Rm)
         theta = logm(Rm)
         
-        odom_data = [x, y, z, theta[2, 1], theta[0, 2], theta[1, 0]]
+        correct_z = theta[1, 0] - pi
+        if(self.last_z != None):
+            if correct_z - self.last_z < -pi:
+                correct_z += 2 * pi
+            if correct_z - self.last_z > pi:
+                correct_z -= 2 * pi
+
+        self.last_z = correct_z
+        
+        print("\r", correct_z, end="", flush = True)
+        
+        odom_data = [x, y, z, theta[2, 1], theta[0, 2], correct_z]
         self.inputs[1] = odom_data
         
         self.recive_odom_flag = 1
@@ -60,7 +73,7 @@ class KalmanFilterNode(Node):
             self.filter.delta_t = now_time - self.last_time if(self.last_time != 0) else(0.1)
             self.last_time = now_time
             
-            res =  self.filter.update(self.inputs)
+            res = self.filter.update(self.inputs)
             self.pub()
             self.recive_odom_flag = 0
             
@@ -105,19 +118,21 @@ class ESKalmanFilter():
         self.P = np.eye(18) * 1e-2
         self.Q = np.block([[zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix], 
                            [zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix, zero_matrix, zero_matrix],
-                           [zero_matrix, zero_matrix, one_matrix * 1e-3, zero_matrix, zero_matrix, zero_matrix],
-                           [zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-3, zero_matrix, zero_matrix],
-                           [zero_matrix, zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-3, zero_matrix],
+                           [zero_matrix, zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-4, zero_matrix],
                            [zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix]])
         self.R = np.block([[one_matrix * 1e-2, zero_matrix], 
-                           [zero_matrix, one_matrix * 1e-4]])
+                           [zero_matrix, one_matrix * 1e-6]])
         
         self.nominal_state = np.zeros([18])
         self.error_state = np.zeros([18])
         
         self.ba = np.array([-0.46, -0.26, 0])
-        self.g = np.array([0, 0, -9.8])
+        self.bg = np.array([3.5e-4, 1.5e-3, 1.1e-3])
+        self.g = np.array([0, 0, -9.815])
         self.nominal_state[9:12] = self.ba
+        self.nominal_state[12:15] = self.bg
         self.nominal_state[15:18] = self.g
         
     def update(self, inputs):
@@ -136,7 +151,8 @@ class ESKalmanFilter():
         x += x_po
         self.nominal_state = x
         
-        print("\r", x_po[6:9], end="", flush = True)
+        # print("\r", np.trace(self.P), end="", flush = True)
+        # print("\r", odom_data[3:], end="", flush = True)
         
         return self.nominal_state
 
@@ -158,6 +174,7 @@ class ESKalmanFilter():
         R1_matrix = -Rot @ self._get_skew(a - ba) * self.delta_t
         R2_matrix = -Rot * self.delta_t
         E_matrix = self._exp(-(omega - bg) * self.delta_t)
+        E_matrix = one_matrix - self._get_skew((omega - bg) * self.delta_t)
         
         return np.block([[one_matrix, delta_t_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix], 
                          [zero_matrix, one_matrix, R1_matrix, R2_matrix, zero_matrix, delta_t_matrix],
@@ -205,31 +222,6 @@ class ESKalmanFilter():
         
         return j
         
-        
-class KalmanFilter():
-    def __init__(self):
-        self.A = np.zeros([6, 6])
-        self.B = np.zeros([6, 6])
-        self.H = np.zeros([3, 6])
-        
-        self.x = np.zeros([6])
-        
-        self.P = np.zeros([6, 6])
-        self.Q = np.zeros([6, 6])
-        self.R = np.zeros([3, 3])
-        
-    def update(self, inputs):
-        [u, z] = inputs
-        x_pr = self.A @ self.x + self.B @ u
-        P_pr = self.A @ self.P @ self.A.T + self.Q 
-        K = P_pr @ self.H.T @ np.linalg.inv(self.H @ P_pr @ self.H.T + self.R)
-        x_po = x_pr + K @ (z - self.H @ x_pr)
-        
-        # self.P = P_pr + K @ (self.Q - H @ P_pr @ H.T) @ K.T
-        self.P = P_pr - K @ self.H @ P_pr
-        self.x = x_po
-        
-        return x_po
         
 def main(args=None):
     rclpy.init(args=args) 
