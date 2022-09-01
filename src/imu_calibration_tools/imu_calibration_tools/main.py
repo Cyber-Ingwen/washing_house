@@ -40,7 +40,7 @@ class FormatNode(Node):
         
         new.angular_velocity.x += 0.0
         new.angular_velocity.y += 0.0
-        new.angular_velocity.z -= 0.07
+        new.angular_velocity.z += 0.0
         
         self.omega = [new.angular_velocity.x, new.angular_velocity.y, new.angular_velocity.z]
         self.a = [new.linear_acceleration.x, new.linear_acceleration.y, new.linear_acceleration.z]
@@ -54,12 +54,11 @@ class FormatNode(Node):
 
         # self.pub_imu.publish(new)    
         
-        self.list.append((self.theta[0]))
+        self.list.append((self.omega[1]))
         self.count += 1
-        if (self.count % 200 == 0):
-            print("num:", len(self.list))
-            sigma = 0.06
-            mu = -0.018
+        if (self.count % 1000 == 0):
+            mu = 0.085
+            sigma = 0.025
             bins = 300
             
             fig, ax = plt.subplots(1, 1)
@@ -67,12 +66,12 @@ class FormatNode(Node):
             weights = np.ones_like(self.list) / float(len(self.list))
             _, bins, _ = ax.hist(self.list, bins, weights = weights, density=1)
             
-            # y = ((1/(np.power(2*np.pi, 0.5)*sigma))*np.exp(-0.5*np.power((bins-mu)/sigma, 2)))
-
-            # ax.plot(bins, y, color="#7744FF", ls="--", lw=3)
+            y = ((1/(np.power(2*np.pi, 0.5)*sigma))*np.exp(-0.5*np.power((bins-mu)/sigma, 2)))
+            ax.plot(bins, y, color="#7744FF", ls="--", lw=3)
+            
             plt.show()
         
-        print("\r", self.count, "--", self.omega[2], end="", flush = True)
+        print("\r", self.count, "--", self.omega[1], end="", flush = True)
         
     def cul_pose(self):
         temp_theta = [0, 0, 0]
