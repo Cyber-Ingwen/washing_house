@@ -37,10 +37,17 @@ def generate_launch_description():
             output='screen'
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', "-l", 'bag/bag/bag.db3'],
+            cmd=['ros2', 'bag', 'play', "-l", 'bag/bag.db3'],
+            # cmd=['ros2', 'bag', 'play', "-l", 'bag/last.db3'],
             output='screen'
         ),
         frameFeature_node, lidarOdometry_node, rviz_node,
+        # Node(
+        #     package='imu_calibration_tools',
+        #     executable='eskf_node',
+        #     name='eskf_node',
+        #     output='screen'
+        # ),
         # MapOptmization_node,
         # launch_ros.actions.Node(
         #     package='robot_localization',
