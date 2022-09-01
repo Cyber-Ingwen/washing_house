@@ -47,10 +47,14 @@ class Kalman:
         self.K = float('nan')
         self.z = float('nan')
         self.P = np.diag(np.ones(6))
-        self.x = [px, py, pz, vx, vy, vz]
-        self.x = np.array(self.x)
-        self.G = [px, py, pz, vx, vy, vz]
-        self.G = np.array(self.G)
+        self.x = np.zeros((6,1))
+        self.x[0] = px
+        self.x[1] = py
+        self.x[2] = pz
+        self.x[3] = vx
+        self.x[4] = vy
+        self.x[5] = vz
+        self.G = np.zeros((6,1))
         self.A = np.eye(6) + np.diag(np.ones((1, 3))[0, :], 3) * 0.01
         self.Q = np.diag(np.ones(6)) * 0.1
         self.H = np.eye(3, 6)
@@ -60,7 +64,7 @@ class Kalman:
  
     def kf_update(self):
         #计算不考虑误差的预测值
-        AA = np.dot(self.A, self.x.T) #6x1
+        AA = np.dot(self.A, self.x) #6x1
         BB = np.dot(self.B,self.u) #6x1
         x_ = np.array(AA) + BB
     
@@ -78,9 +82,9 @@ class Kalman:
         self.K = np.dot(z1, z5) #6x3
  
         #data fusion
-        d1 = np.dot(self.H, x_) #3x6
+        d1 = np.dot(self.H, x_) #3x1
         d2 = np.array(self.z) - np.array(d1) 
-        d3 = np.dot(self.K, d2) #6x6
+        d3 = np.dot(self.K, d2) #6x1
         self.x = np.array(x_) + np.array(d3) 
  
         #更新后验协方差
@@ -107,7 +111,7 @@ class Kalman:
         #print("**************************************************************")
         kalman_filter_params = self.kf_update()  # 卡尔曼滤波
         kf_record.append(np.transpose(kalman_filter_params.x))
-        kf_p.append(np.transpose(kalman_filter_params.G))
-        #print(kf_p) 
+        kf_p.append(np.transpose(kalman_filter_params.x))
+        #print(kalman_filter_params.x) 
         return kf_p
-
+        
