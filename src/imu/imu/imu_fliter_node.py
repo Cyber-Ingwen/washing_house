@@ -18,7 +18,7 @@ class IMUPublisher(Node):
         self.imu_msg.angular_velocity.z = z_angle
         self.imu_msg.linear_acceleration.x = x_linear
         self.imu_msg.linear_acceleration.y = y_linear
-        self.imu_msg.linear_acceleration.z = z_linear
+        self.imu_msg.linear_acceleration.z = z_linear - 9.8
         self.imu_msg.orientation.x = q1
         self.imu_msg.orientation.y = q2
         self.imu_msg.orientation.z = q3
