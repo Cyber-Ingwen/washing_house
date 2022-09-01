@@ -1,12 +1,13 @@
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import Imu
-from nav_msgs.msg import Odometry
 import numpy as np
+import rclpy
+from nav_msgs.msg import Odometry, Path
+from geometry_msgs.msg import PoseStamped
+from rclpy.node import Node
 from scipy.linalg import expm, logm
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation as Rota
+from sensor_msgs.msg import Imu
 
-    
+
 class KalmanFilterNode(Node):
     def __init__(self, name):
         super().__init__(name)
@@ -14,10 +15,15 @@ class KalmanFilterNode(Node):
         
         self.sub_imu = self.create_subscription(Imu, "/imu", self.callback_imu, 10)
         self.sub_odom = self.create_subscription(Odometry, "/frame_odom2", self.callback_odom, 10)
+        self.pub_odom = self.create_publisher(Odometry, "/odom3", 10) 
+        self.pub_path = self.create_publisher(Path, "/path2", 10) 
         
         self.filter = ESKalmanFilter()
+        self.path = Path()
         self.inputs = [1, 1]
         self.recive_odom_flag = 0
+        self.count = 0
+        self.last_time = 0
         
     def callback_imu(self, data):
         a = [data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z]
@@ -25,9 +31,8 @@ class KalmanFilterNode(Node):
         imu_data = [a, omega]
         self.inputs[0] = imu_data
         
-        if self.recive_odom_flag == 1:
-            self.update()
-    
+        self.update()
+            
     def callback_odom(self, data):
         x = data.pose.pose.position.x
         y = data.pose.pose.position.y
@@ -38,30 +43,82 @@ class KalmanFilterNode(Node):
         q3 = data.pose.pose.orientation.z
         q4 = data.pose.pose.orientation.w
         Rq = [q1, q2, q3, q4]
-        Rm = R.from_quat(Rq)
-        Rm = Rm.as_matrix()
+        Rm = (Rota.from_quat(Rq)).as_matrix()
         Rm = np.array(Rm)
         theta = logm(Rm)
         
         odom_data = [x, y, z, theta[2, 1], theta[0, 2], theta[1, 0]]
         self.inputs[1] = odom_data
+        
         self.recive_odom_flag = 1
     
     def update(self):
-        res =  self.filter.update(self.inputs)
+        if self.recive_odom_flag == 1:
+            # Δt
+            [sec, nano] = self.get_clock().now().seconds_nanoseconds()
+            now_time = sec + 1e-9 * nano
+            self.filter.delta_t = now_time - self.last_time if(self.last_time != 0) else(0.1)
+            self.last_time = now_time
+            
+            res =  self.filter.update(self.inputs)
+            self.pub()
+            self.recive_odom_flag = 0
+            
+    def pub(self):
+        odom = Odometry()
+        odom.pose.pose.position.x = self.filter.nominal_state[0]
+        odom.pose.pose.position.y = self.filter.nominal_state[1]
+        odom.pose.pose.position.z = self.filter.nominal_state[2]
+        
+        theta = [self.filter.nominal_state[6], self.filter.nominal_state[7], self.filter.nominal_state[8]]
+        theta = self.filter.nominal_state[6:9]
+        R = self.filter._exp(theta)
+        q = (Rota.from_matrix(R)).as_quat()
+        
+        odom.pose.pose.orientation.x = q[0]
+        odom.pose.pose.orientation.y = q[1]
+        odom.pose.pose.orientation.z = q[2]
+        odom.pose.pose.orientation.w = q[3]
+        
+        odom.header.frame_id = "map"
+        
+        self.pub_odom.publish(odom)
+        
+        pose_stamped = PoseStamped()
+        
+        pose_stamped.header.stamp = odom.header.stamp
+        pose_stamped.header.frame_id = "map"
+        pose_stamped.pose = odom.pose.pose
+        self.path.poses.append(pose_stamped)
+        self.path.header.stamp = odom.header.stamp
+        self.path.header.frame_id = "map"
+        self.pub_path.publish(self.path)
+        
+        # print("\r", self.filter.nominal_state[15], self.filter.nominal_state[16], self.filter.nominal_state[17], end="", flush = True)
         
 
 class ESKalmanFilter():
     def __init__(self):
-        self.delta_t = 0.01
-        self.P = 0.01 * np.eye(18)
-        self.Q = 0.01 * np.eye(18)
-        self.R = 0.01 * np.eye(6)
+        self.delta_t = 0.5
+        one_matrix = np.eye(3)
+        zero_matrix = np.zeros((3, 3))
+        self.P = np.eye(18) * 1e-2
+        self.Q = np.block([[zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix], 
+                           [zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, one_matrix * 1e-3, zero_matrix, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-3, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-3, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix]])
+        self.R = np.block([[one_matrix * 1e-2, zero_matrix], 
+                           [zero_matrix, one_matrix * 1e-4]])
         
         self.nominal_state = np.zeros([18])
         self.error_state = np.zeros([18])
         
-        self.g = np.array([0, 0, 9.8])
+        self.ba = np.array([-0.46, -0.26, 0])
+        self.g = np.array([0, 0, -9.8])
+        self.nominal_state[9:12] = self.ba
+        self.nominal_state[15:18] = self.g
         
     def update(self, inputs):
         [imu_data, odom_data] = inputs
@@ -69,17 +126,17 @@ class ESKalmanFilter():
         H = self._get_H()
         z = odom_data
         
-        delta_x = self.error_state
         x = self.nominal_state
         
-        delta_x_pr = A @ delta_x
         P_pr = A @ self.P @ A.T + self.Q 
         K = P_pr @ H.T @ np.linalg.inv(H @ P_pr @ H.T + self.R)
-        x_po = K @ (z - H @ (x + delta_x_pr))
+        x_po = K @ (z - H @ x)
         
         self.P = P_pr - K @ H @ P_pr
         x += x_po
         self.nominal_state = x
+        
+        print("\r", x_po[6:9], end="", flush = True)
         
         return self.nominal_state
 
@@ -142,9 +199,9 @@ class ESKalmanFilter():
             b = theta / a
             
             temp = 0.5 * a * (1 / np.tan(0.5 * a))
-            j = temp * np.eye(3) + (1 - temp) * b * b.T + 0.5 * a * self._get_skew(b)
+            j = temp * np.eye(3) + (1 - temp) * b @ b.T + 0.5 * a * self._get_skew(b)
         else:
-            j = 0 * np.eye(3)
+            j = np.eye(3)
         
         return j
         
