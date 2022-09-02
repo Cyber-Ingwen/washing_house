@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import math
  
 class Kalman:
     B = 0
@@ -31,15 +31,15 @@ class Kalman:
     # 大小取决于对观察过程的信任程度。如果观测结果中的坐标x值常常很准确，那么矩阵R的第一个值应该比较小
     R = np.diag(np.ones(3)) * 0.1
  
-    def kf_init(self,px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z):
+    def kf_init(self,px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z,r,p,y):
     # 状态x为（坐标x， 坐标y，坐标z, 速度x， 速度y, 速度z），观测值z为（坐标x， 坐标y, 坐标z）
         self.B = np.zeros((6,3))
-        self.B[0][0] = - 0.00005
-        self.B[0][1] = - 0.00005
-        self.B[0][2] = - 0.00005
-        self.B[1][0] = - 1
-        self.B[1][1] = - 1
-        self.B[1][2] = - 1  
+        # self.B[0][0] = - 0.00005
+        # self.B[0][1] = - 0.00005
+        # self.B[0][2] = - 0.00005
+        self.B[3][0] = - 0.005
+        self.B[4][2] = - 0.005
+        self.B[5][3] = - 0.005  
         self.u = np.zeros((3,1))
         self.u[0] = v_form_x
         self.u[0] = v_form_y
@@ -56,6 +56,9 @@ class Kalman:
         self.x[5] = vz
         self.G = np.zeros((6,1))
         self.A = np.eye(6) + np.diag(np.ones((1, 3))[0, :], 3) * 0.01
+        self.A[3][3] += 0.005
+        self.A[4][4] += 0.005
+        self.A[5][5] += 0.005
         self.Q = np.diag(np.ones(6)) * 0.1
         self.H = np.eye(3, 6)
         self.R = np.diag(np.ones(3)) * 0.1
@@ -97,14 +100,24 @@ class Kalman:
         return self
 
  
-    def Kalman_Fliter(self,px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z, x_clo, y_clo, z_clo):
+    def Kalman_Fliter(self,px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z, x_clo, y_clo, z_clo,r,p,y):
         kf_record = []
         kf_p = []
-        kalman_filter_params = self.kf_init(px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z)
+        kalman_filter_params = self.kf_init(px, py, pz, vx, vy, vz, v_form_x, v_form_y, v_form_z,r,p,y)
         kalman_filter_params.z = np.zeros((3,1))
         kalman_filter_params.z[0] = x_clo
         kalman_filter_params.z[1] = y_clo
         kalman_filter_params.z[2] = z_clo
+        self.A[0][0] += math.cos(p) * math.cos(y)
+        self.A[0][1] += math.sin(y) * math.cos(p)
+        self.A[0][2] += - math.sin(p)
+        self.A[1][0] = math.sin(p) * math.sin(r) * math.cos(y) - math.sin(y) * math.cos(r)
+        self.A[1][1] = math.sin(p) * math.sin(r) * math.sin(y) + math.cos(r) * math.cos(y)
+        self.A[1][2] = math.sin(r) * math.cos(p)
+        self.A[2][0] = math.sin(p) * math.cos(r) * math.cos(y) - math.sin(y) * math.sin(r)
+        self.A[2][1] = math.sin(p) * math.cos(self.roll) * math.cos(self.yaw) - math.cos(self.yaw) * math.sin(self.roll)
+        self.A[2][2] = math.cos(p) * math.cos(self.roll)
+
         #kalman_filter_params.z = np.transpose([x_clo, y_clo, z_clo])  # 设置当前时刻的观测位置
         #print("----------------------------------------------")
         #print(kalman_filter_params.z)
