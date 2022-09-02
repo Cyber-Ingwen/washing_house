@@ -1,4 +1,3 @@
-from cmath import pi
 import numpy as np
 import rclpy
 from nav_msgs.msg import Odometry, Path
@@ -12,7 +11,7 @@ from sensor_msgs.msg import Imu
 class KalmanFilterNode(Node):
     def __init__(self, name):
         super().__init__(name)
-        self.get_logger().info(name + "节点已创建")
+        self.get_logger().info(("\033[1;32m----> "+str(name)+" Started.\033[0m"))
         
         self.sub_imu = self.create_subscription(Imu, "/imu", self.callback_imu, 10)
         self.sub_odom = self.create_subscription(Odometry, "/frame_odom2", self.callback_odom, 10)
@@ -29,7 +28,7 @@ class KalmanFilterNode(Node):
         
     def callback_imu(self, data):
         a = [data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z]
-        omega = [data.angular_velocity.x * pi / 180, data.angular_velocity.y * pi / 180, data.angular_velocity.z * pi / 180]
+        omega = [data.angular_velocity.x * np.pi / 180, data.angular_velocity.y * np.pi / 180, data.angular_velocity.z * np.pi / 180]
         imu_data = [a, omega]
         self.inputs[0] = imu_data
         
@@ -49,16 +48,17 @@ class KalmanFilterNode(Node):
         Rm = np.array(Rm)
         theta = logm(Rm)
         
-        correct_z = theta[1, 0] - pi
-        if(self.last_z != None):
-            if correct_z - self.last_z < -pi:
-                correct_z += 2 * pi
-            if correct_z - self.last_z > pi:
-                correct_z -= 2 * pi
+        correct_z = theta[1, 0]
+        # correct_z = theta[1, 0] - np.pi
+        # if(self.last_z != None):
+        #     if correct_z - self.last_z < -np.pi:
+        #         correct_z += 2 * np.pi
+        #     if correct_z - self.last_z > np.pi:
+        #         correct_z -= 2 * np.pi
 
         self.last_z = correct_z
         
-        print("\r", correct_z, end="", flush = True)
+        print("\r", correct_z, theta[1, 0], end="", flush = True)
         
         odom_data = [x, y, z, theta[2, 1], theta[0, 2], correct_z]
         self.inputs[1] = odom_data
@@ -73,7 +73,7 @@ class KalmanFilterNode(Node):
             self.filter.delta_t = now_time - self.last_time if(self.last_time != 0) else(0.1)
             self.last_time = now_time
             
-            res = self.filter.update(self.inputs)
+            self.filter.update(self.inputs)
             self.pub()
             self.recive_odom_flag = 0
             
@@ -107,20 +107,18 @@ class KalmanFilterNode(Node):
         self.path.header.frame_id = "map"
         self.pub_path.publish(self.path)
         
-        # print("\r", self.filter.nominal_state[15], self.filter.nominal_state[16], self.filter.nominal_state[17], end="", flush = True)
-        
 
 class ESKalmanFilter():
     def __init__(self):
         self.delta_t = 0.5
         one_matrix = np.eye(3)
         zero_matrix = np.zeros((3, 3))
-        self.P = np.eye(18) * 1e-2
+        self.P = np.eye(18) * 1e-3
         self.Q = np.block([[zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix], 
-                           [zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix, zero_matrix, zero_matrix],
-                           [zero_matrix, zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix, zero_matrix],
-                           [zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-2, zero_matrix, zero_matrix],
-                           [zero_matrix, zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-4, zero_matrix],
+                           [zero_matrix, one_matrix * 1e-4, zero_matrix, zero_matrix, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, one_matrix * 1e-6, zero_matrix, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-6, zero_matrix, zero_matrix],
+                           [zero_matrix, zero_matrix, zero_matrix, zero_matrix, one_matrix * 1e-6, zero_matrix],
                            [zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix]])
         self.R = np.block([[one_matrix * 1e-2, zero_matrix], 
                            [zero_matrix, one_matrix * 1e-6]])
@@ -128,9 +126,11 @@ class ESKalmanFilter():
         self.nominal_state = np.zeros([18])
         self.error_state = np.zeros([18])
         
+        self.theta = np.array([0, 0, np.pi])
         self.ba = np.array([-0.46, -0.26, 0])
         self.bg = np.array([3.5e-4, 1.5e-3, 1.1e-3])
         self.g = np.array([0, 0, -9.815])
+        self.nominal_state[6:9] = self.theta
         self.nominal_state[9:12] = self.ba
         self.nominal_state[12:15] = self.bg
         self.nominal_state[15:18] = self.g
@@ -151,8 +151,9 @@ class ESKalmanFilter():
         x += x_po
         self.nominal_state = x
         
-        # print("\r", np.trace(self.P), end="", flush = True)
-        # print("\r", odom_data[3:], end="", flush = True)
+        # temp = H @ x
+        # print("\r", np.linalg.det(H @ P_pr @ H.T + self.R), end="", flush = True)
+        # print("\r", self.nominal_state[9:12], end="", flush = True)
         
         return self.nominal_state
 
@@ -173,7 +174,6 @@ class ESKalmanFilter():
         
         R1_matrix = -Rot @ self._get_skew(a - ba) * self.delta_t
         R2_matrix = -Rot * self.delta_t
-        E_matrix = self._exp(-(omega - bg) * self.delta_t)
         E_matrix = one_matrix - self._get_skew((omega - bg) * self.delta_t)
         
         return np.block([[one_matrix, delta_t_matrix, zero_matrix, zero_matrix, zero_matrix, zero_matrix], 
@@ -212,13 +212,18 @@ class ESKalmanFilter():
     
     def _get_jacobi(self, theta):
         a = np.linalg.norm(theta)
-        if (a != 0):
+        if (a == 0.0):
+            j = np.eye(3)
+        elif (a == 2 * np.pi):
+            j = np.eye(3)
+        elif (a != 0) & (a != 2 * np.pi):
             b = theta / a
             
             temp = 0.5 * a * (1 / np.tan(0.5 * a))
-            j = temp * np.eye(3) + (1 - temp) * b @ b.T + 0.5 * a * self._get_skew(b)
+            j = temp * np.eye(3) + (1 - temp) * b.reshape(3,1) @ b.reshape(1,3) + 0.5 * a * self._get_skew(b)
         else:
-            j = np.eye(3)
+            print("_____________WARNING____________")
+            print(a)
         
         return j
         
