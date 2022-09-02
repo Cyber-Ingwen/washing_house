@@ -21,7 +21,7 @@ class Node_kf(Node):
     def __init__(self):
         super().__init__('dataread')
         self.sub_point_cloud = self.create_subscription(Odometry, '/odom2', self.callback1, 100)
-        self.imu_msg = self.create_subscription(Imu,'/imu',self.callback2,10)
+        self.imu_msg = self.create_subscription(Imu,'/imu_filter',self.callback2,10)
         self.pub_pose = self.create_publisher(Odometry,'/odom_kf',10)
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.callback3)
@@ -42,6 +42,12 @@ class Node_kf(Node):
         self.y_clo = 0
         self.z_clo = 0
         self.flag = 0
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
+        self.roll_g = 0
+        self.pitch_g = 0
+        self.yaw_g = 0
         #KalmanFliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
         self.m = Kalman()
         #self.m.Kalman_Fliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
@@ -75,31 +81,43 @@ class Node_kf(Node):
             print(tt)
             pub_p.pose.pose.position.x = tt[0][0]
             pub_p.pose.pose.position.y = tt[1][0]
-            pub_p.pose.pose.position.z = tt[][0]
+            pub_p.pose.pose.position.z = tt[2][0]
         self.pub_pose.publish(pub_p)
-        self.get_logger().info('odo m send')
+        self.get_logger().info('odom send')
 
     def imu_position_volcity(self,x_linear,y_linear,z_linear,x_angle,y_angle,z_angle):
-        self.last_vel_x = self.v_x_0
-        self.last_vel_y = self.v_y_0
-        self.last_vel_z = self.v_z_0
-        self.v_x_0 = self.v_x_0 + 0.01 * x_linear
-        self.v_y_0 = self.v_y_0 + 0.01 * y_linear
-        self.v_z_0 = self.v_z_0 + 0.01 * z_linear
-        m = mahony()
-        m.mahony_imu(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
-        x_1 = mahony.R[0][0] 
-        x_2 = mahony.R[1][0] 
-        x_3 = mahony.R[2][0] 
-        y_1 = mahony.R[0][1] 
-        y_2 = mahony.R[1][1] 
-        y_3 = mahony.R[2][1] 
-        z_1 = mahony.R[0][2] 
-        z_2 = mahony.R[1][2] 
-        z_3 = mahony.R[2][2] 
-        self.p_x_0 = self.p_x_0 * x_1 + self.p_x_0 * x_2 + self.p_x_0 * x_3 + 0.015 * x_linear - 0.005 * self.last_vel_x
-        self.p_y_0 = self.p_y_0 * y_1 + self.p_y_0 * y_2 + self.p_y_0 * y_3 + 0.015 * y_linear - 0.005 * self.last_vel_y
-        self.p_z_0 = self.p_z_0 * z_1 + self.p_z_0 * z_2 + self.p_z_0 * z_3 + 0.015 * z_linear - 0.005 * self.last_vel_z
+        d = math.pi / 180
+        M_gro_inv = np.zeros((3,3))
+        M_gro_inv[0][0] = 1
+        M_gro_inv[0][1] = math.sin(self.roll)*math.tan(self.pitch)
+        M_gro_inv[0][2] = math.cos(self.roll)*math.tan(self.pitch)
+        M_gro_inv[1][1] = math.cos(self.roll)
+        M_gro_inv[1][2] = -math.sin(self.roll)
+        M_gro_inv[2][1] = math.sin(self.roll)/math.cos(self.pitch)
+        M_gro_inv[2][2] = math.cos(self.roll)/math.cos(self.pitch)
+        M_rpy_g = np.zeros((3,1))
+        M_g = np.zeros((3,1))
+        M_g[0][0] = x_angle
+        M_g[1][0] = y_angle
+        M_g[2][0] = z_angle
+        M_rpy_g = np.dot(M_gro_inv,M_g)
+        d_roll_g = M_rpy_g[0][0] 
+        d_pitch_g = M_rpy_g[1][0] 
+        d_yaw_g = M_rpy_g[2][0]
+        self.roll_g += d_roll_g * 0.01 
+        self.pitch_g += d_pitch_g * 0.01 
+        self.yaw_g += d_yaw_g * 0.01
+
+        # M_acc = np.zeros((3,1))
+        # M_acc[0][0] = -z_angle * math.sin(self.yaw)
+        # M_acc[1][0] = z_angle * math.sin(self.roll) * math.cos(self.yaw)
+        # M_acc[2][0] = z_angle * math.cos(self.roll) * math.cos(self.yaw)
+        self.roll = math.atan(y_linear/x_linear)
+        self.pitch = -math.atan(x_linear/math.sqrt(y_linear * y_linear + z_linear * z_linear))
+        self.roll = self.roll_g + (self.roll - self.roll_g) * 0.4
+        self.pitch = self.pitch_g + (self.pitch - self.pitch_g) * 0.4
+        self.yaw = self.yaw_g
+        print(self.roll,self.pitch,self.yaw)
         return 1
 
 class mahony():
