@@ -38,8 +38,8 @@ class Kalman:
         # self.B[0][1] = - 0.00005
         # self.B[0][2] = - 0.00005
         self.B[3][0] = - 0.005
-        self.B[4][2] = - 0.005
-        self.B[5][3] = - 0.005  
+        self.B[4][1] = - 0.005
+        self.B[5][2] = - 0.005  
         self.u = np.zeros((3,1))
         self.u[0] = v_form_x
         self.u[0] = v_form_y
@@ -115,8 +115,8 @@ class Kalman:
         self.A[1][1] = math.sin(p) * math.sin(r) * math.sin(y) + math.cos(r) * math.cos(y)
         self.A[1][2] = math.sin(r) * math.cos(p)
         self.A[2][0] = math.sin(p) * math.cos(r) * math.cos(y) - math.sin(y) * math.sin(r)
-        self.A[2][1] = math.sin(p) * math.cos(self.roll) * math.cos(self.yaw) - math.cos(self.yaw) * math.sin(self.roll)
-        self.A[2][2] = math.cos(p) * math.cos(self.roll)
+        self.A[2][1] = math.sin(p) * math.cos(r) * math.cos(y) - math.cos(y) * math.sin(r)
+        self.A[2][2] = math.cos(p) * math.cos(r)
 
         #kalman_filter_params.z = np.transpose([x_clo, y_clo, z_clo])  # 设置当前时刻的观测位置
         #print("----------------------------------------------")
