@@ -13,7 +13,7 @@ class FormatNode(Node):
         self.get_logger().info("format_imu_pointcloud_node节点已创建")
         
         self.sub_imu = self.create_subscription(Imu, "/imu", self.callback_imu, 10)
-        self.pub_imu = self.create_publisher(Imu, "/imu_correct", 10) 
+        self.pub_imu = self.create_publisher(Imu, "/imu_2", 10) 
         
         self.time_sec = 0
         self.time_nsec = 0
@@ -34,49 +34,48 @@ class FormatNode(Node):
     def callback_imu(self, data):
         new = data
         
-        # new.linear_acceleration.x = 0.0
-        # new.linear_acceleration.y = 0.0
-        # new.linear_acceleration.z = 9.8
+        new.linear_acceleration.x += 0.46
+        new.linear_acceleration.y += 0.26
         
-        new.angular_velocity.x += 0.0
-        new.angular_velocity.y += 0.0
-        new.angular_velocity.z += 0.0
+        new.angular_velocity.x *= np.pi / 180
+        new.angular_velocity.y *= np.pi / 180
+        new.angular_velocity.z *= np.pi / 180
         
         self.omega = [new.angular_velocity.x, new.angular_velocity.y, new.angular_velocity.z]
         self.a = [new.linear_acceleration.x, new.linear_acceleration.y, new.linear_acceleration.z]
         Quat_list = self.cul_pose()
         [new.orientation.x, new.orientation.y, new.orientation.z, new.orientation.w] = Quat_list
         
-        # new.linear_acceleration.z = 0.0
+        new.linear_acceleration.z = 0.0
         
-        # new.header.stamp = self.get_clock().now().to_msg()
-        # new.header.frame_id = "map"
+        new.header.stamp = self.get_clock().now().to_msg()
+        new.header.frame_id = "map"
 
-        # self.pub_imu.publish(new)    
+        self.pub_imu.publish(new)    
         
-        self.list.append((self.omega[1]))
-        self.count += 1
-        if (self.count % 1000 == 0):
-            mu = 0.085
-            sigma = 0.025
-            bins = 300
+        # self.list.append((self.omega[1]))
+        # self.count += 1
+        # if (self.count % 1000 == 0):
+        #     mu = 0.085
+        #     sigma = 0.025
+        #     bins = 300
             
-            fig, ax = plt.subplots(1, 1)
+        #     fig, ax = plt.subplots(1, 1)
             
-            weights = np.ones_like(self.list) / float(len(self.list))
-            _, bins, _ = ax.hist(self.list, bins, weights = weights, density=1)
+        #     weights = np.ones_like(self.list) / float(len(self.list))
+        #     _, bins, _ = ax.hist(self.list, bins, weights = weights, density=1)
             
-            y = ((1/(np.power(2*np.pi, 0.5)*sigma))*np.exp(-0.5*np.power((bins-mu)/sigma, 2)))
-            ax.plot(bins, y, color="#7744FF", ls="--", lw=3)
+        #     y = ((1/(np.power(2*np.pi, 0.5)*sigma))*np.exp(-0.5*np.power((bins-mu)/sigma, 2)))
+        #     ax.plot(bins, y, color="#7744FF", ls="--", lw=3)
             
-            plt.show()
+        #     plt.show()
         
-        print("\r", self.count, "--", self.omega[1], end="", flush = True)
+        # print("\r", self.count, "--", self.omega[1], end="", flush = True)
         
     def cul_pose(self):
         temp_theta = [0, 0, 0]
         temp_theta[0] = -atan2(self.a[1], self.a[2])
-        temp_theta[1] = -asinh(self.a[0] / 9.8)
+        temp_theta[1] = -asinh(self.a[0] / 9.815)
         
         delta_t = 0.01
         k = 10

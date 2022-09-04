@@ -100,9 +100,9 @@ void MapOptmization::imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     new_msg.linear_acceleration.y = msg_ptr->linear_acceleration.y + 0.265;
     new_msg.linear_acceleration.z = msg_ptr->linear_acceleration.z + 0.016;
 
-    new_msg.angular_velocity.x = msg_ptr->angular_velocity.x - 0.0182214;
-    new_msg.angular_velocity.y = msg_ptr->angular_velocity.y - 0.0831042;
-    new_msg.angular_velocity.z = msg_ptr->angular_velocity.z - 0.0688892;
+    new_msg.angular_velocity.x = (msg_ptr->angular_velocity.x - 0.0182214) * 3.1416 / 180.0;
+    new_msg.angular_velocity.y = (msg_ptr->angular_velocity.y - 0.0831042) * 3.1416 / 180.0;
+    new_msg.angular_velocity.z = (msg_ptr->angular_velocity.z - 0.0688892) * 3.1416 / 180.0;
 
     new_msg.orientation_covariance = {1000000.0, 0, 0,
                                     0, 1000000, 0,
@@ -130,15 +130,17 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
     auto acc_roll = -atan2(ay, az);
     auto acc_pitch = asinh(ax / g);
 
-    auto omega_x = msg_ptr->angular_velocity.x - 0.0182214;
-    auto omega_y = msg_ptr->angular_velocity.y - 0.0831042;
-    auto omega_z = msg_ptr->angular_velocity.z - 0.0688892;
+    auto omega_x = (msg_ptr->angular_velocity.x - 0.0182214) * 3.1416 / 180.0;
+    auto omega_y = (msg_ptr->angular_velocity.y - 0.0831042) * 3.1416 / 180.0;
+    auto omega_z = (msg_ptr->angular_velocity.z - 0.0688892) * 3.1416 / 180.0;
 
     roll = (1 - k * delta_t) * roll + k * delta_t * acc_roll + omega_x * delta_t;
     pitch = (1 - k * delta_t) * pitch + k * delta_t * acc_pitch + omega_y * delta_t;
     yaw = yaw + omega_z * delta_t;
 
     this->cul_val_mean_var(roll);
+
+    cout << "旋转：" << roll << " " << pitch << " " << yaw << endl;
 
     // 位置
     Matrix3f R;
