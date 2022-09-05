@@ -53,24 +53,24 @@ class FormatNode(Node):
 
         self.pub_imu.publish(new)    
         
-        # self.list.append((self.omega[1]))
-        # self.count += 1
-        # if (self.count % 1000 == 0):
-        #     mu = 0.085
-        #     sigma = 0.025
-        #     bins = 300
+        self.list.append((self.omega[1]))
+        self.count += 1
+        if (self.count % 1000 == 0):
+            mu = 0.085
+            sigma = 0.025
+            bins = 300
             
-        #     fig, ax = plt.subplots(1, 1)
+            fig, ax = plt.subplots(1, 1)
             
-        #     weights = np.ones_like(self.list) / float(len(self.list))
-        #     _, bins, _ = ax.hist(self.list, bins, weights = weights, density=1)
+            weights = np.ones_like(self.list) / float(len(self.list))
+            _, bins, _ = ax.hist(self.list, bins, weights = weights, density=1)
             
-        #     y = ((1/(np.power(2*np.pi, 0.5)*sigma))*np.exp(-0.5*np.power((bins-mu)/sigma, 2)))
-        #     ax.plot(bins, y, color="#7744FF", ls="--", lw=3)
+            y = ((1/(np.power(2*np.pi, 0.5)*sigma))*np.exp(-0.5*np.power((bins-mu)/sigma, 2)))
+            ax.plot(bins, y, color="#7744FF", ls="--", lw=3)
             
-        #     plt.show()
+            plt.show()
         
-        # print("\r", self.count, "--", self.omega[1], end="", flush = True)
+        print("\r", self.count, "--", self.omega[1], end="", flush = True)
         
     def cul_pose(self):
         temp_theta = [0, 0, 0]
