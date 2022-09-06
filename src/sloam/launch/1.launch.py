@@ -46,10 +46,7 @@ def generate_launch_description():
             # cmd=['ros2', 'bag', 'play', "-l", 'bag/last.db3'],
             output='screen'
         ),
-        frameFeature_node, 
-        lidarOdometry_node, 
-        MapOptmization_node,
-        rviz_node,
+        frameFeature_node, lidarOdometry_node, rviz_node,
         # Node(
         #     package='imu_calibration_tools',
         #     executable='eskf_node',

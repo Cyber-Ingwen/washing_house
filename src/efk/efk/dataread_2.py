@@ -109,7 +109,7 @@ class Node_kf(Node):
         d_pitch_g = M_rpy_g[1][0] 
         d_yaw_g = M_rpy_g[2][0]
         self.roll_g += d_roll_g * 0.01 
-        self.pitch_g += d_pitch_g * 0.01 
+        self.pitch_g += d_pitch_g * 0.01        
         self.yaw_g += d_yaw_g * 0.01
 
         # M_acc = np.zeros((3,1))

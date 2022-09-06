@@ -108,15 +108,15 @@ class Kalman:
         kalman_filter_params.z[0] = x_clo
         kalman_filter_params.z[1] = y_clo
         kalman_filter_params.z[2] = z_clo
-        self.A[0][0] += math.cos(p) * math.cos(y)
-        self.A[0][1] += math.sin(y) * math.cos(p)
-        self.A[0][2] += - math.sin(p)
+        self.A[0][0] = math.cos(p) * math.cos(y) + 1
+        self.A[0][1] = math.sin(y) * math.cos(p) 
+        self.A[0][2] = - math.sin(p) 
         self.A[1][0] = math.sin(p) * math.sin(r) * math.cos(y) - math.sin(y) * math.cos(r)
-        self.A[1][1] = math.sin(p) * math.sin(r) * math.sin(y) + math.cos(r) * math.cos(y)
+        self.A[1][1] = math.sin(p) * math.sin(r) * math.sin(y) + math.cos(r) * math.cos(y) + 1
         self.A[1][2] = math.sin(r) * math.cos(p)
         self.A[2][0] = math.sin(p) * math.cos(r) * math.cos(y) - math.sin(y) * math.sin(r)
         self.A[2][1] = math.sin(p) * math.cos(r) * math.cos(y) - math.cos(y) * math.sin(r)
-        self.A[2][2] = math.cos(p) * math.cos(r)
+        self.A[2][2] = math.cos(p) * math.cos(r) + 1
 
         #kalman_filter_params.z = np.transpose([x_clo, y_clo, z_clo])  # 设置当前时刻的观测位置
         #print("----------------------------------------------")
