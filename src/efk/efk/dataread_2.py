@@ -1,14 +1,14 @@
 import time
 import math
 import struct
-from turtle import shape
+from turtle import clear, shape
 import rclpy
 import numpy as np
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 #import open3d as o3d
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import sys,os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,6 +48,11 @@ class Node_kf(Node):
         self.roll_g = 0
         self.pitch_g = 0
         self.yaw_g = 0
+        self.list = []
+        self.index = []
+        self.diff = []
+        self.count = 0
+        self.p = 0
         self.M_rotate = np.zeros((3,3))
         #KalmanFliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo)
         self.m = Kalman()
@@ -62,16 +67,31 @@ class Node_kf(Node):
     
     def callback2(self, kk):
         data=kk
-        x_linear = data.linear_acceleration.x
-        y_linear = data.linear_acceleration.y
+        x_linear = data.linear_acceleration.x + 0.35
+        y_linear = data.linear_acceleration.y + 0.26
         z_linear = data.linear_acceleration.z
         x_angle = data.angular_velocity.x
         y_angle = data.angular_velocity.y
         z_angle = data.angular_velocity.z
-        #print("1")
+        self.list.append(z_angle)
+        self.diff.append(y_linear - self.p)
+        self.p = y_linear
+        self.count += 1
+        self.index.append(self.count)
+        # if self.count == 800:
+        #     plt.hist(self.list,bins=80)
+        #     #plt.plot(self.index,self.list)
+        #     plt.show()
+        #     self.count = 0
+        #     self.list = []
+        #     self.index = []
+        #     self.diff = []
+        # print("1")
         self.imu_position_volcity(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
+        print(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo,self.roll,self.pitch,self.roll)
         self.m.Kalman_Fliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo,self.roll,self.pitch,self.roll)
-    
+
+
     def callback3(self):
         pub_p = Odometry()
         pub_p.header.frame_id = "map"
@@ -90,7 +110,7 @@ class Node_kf(Node):
         self.last_vel_x = self.v_x_0
         self.last_vel_y = self.v_y_0
         self.last_vel_z = self.v_z_0
-        d = math.pi / 180
+        #d = math.pi / 180
         M_gro_inv = np.zeros((3,3))
         M_gro_inv[0][0] = 1
         M_gro_inv[0][1] = math.sin(self.roll)*math.tan(self.pitch)
@@ -104,7 +124,9 @@ class Node_kf(Node):
         M_g[0][0] = x_angle
         M_g[1][0] = y_angle
         M_g[2][0] = z_angle
+        #print("-------------------------",x_angle,y_angle,z_angle)
         M_rpy_g = np.dot(M_gro_inv,M_g)
+        #print(M_rpy_g)
         d_roll_g = M_rpy_g[0][0] 
         d_pitch_g = M_rpy_g[1][0] 
         d_yaw_g = M_rpy_g[2][0]
