@@ -18,8 +18,8 @@ lidar:
       difop_port: 7788             #Difop port of lidar
       start_angle: 0               #Start angle of point cloud
       end_angle: 360               #End angle of point cloud 
-      min_distance: 0.2            #Minimum distance of point cloud
-      max_distance: 200            #Maximum distance of point cloud
+      min_distance: 0.4            #Minimum distance of point cloud
+      max_distance: 150            #Maximum distance of point cloud
       wait_for_difop: true         #Wait for DIFOP packet
       use_lidar_clock: false       #True--Use the lidar clock as the message timestamp
                                    #False-- Use the system clock as the timestamp
