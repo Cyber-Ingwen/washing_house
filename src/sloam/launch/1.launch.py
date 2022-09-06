@@ -53,7 +53,7 @@ def generate_launch_description():
         #     name='eskf_node',
         #     output='screen'
         # ),
-        # MapOptmization_node,
+        MapOptmization_node,
         # launch_ros.actions.Node(
         #     package='robot_localization',
         #     executable='ekf_node',
