@@ -26,6 +26,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <pcl/common/transforms.h>
+#include <yaml-cpp/yaml.h>
 
  
 int N_SCAN_ROW=16;    // 激光雷达线数，16线

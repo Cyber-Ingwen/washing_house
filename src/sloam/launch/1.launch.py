@@ -20,6 +20,11 @@ def generate_launch_description():
         package="sloam",
         executable="lidarOdometry"
         )
+    
+    MapOptmization_node = Node(
+        package="sloam",
+        executable="MapOptmization"
+        )
 
     rviz_node = Node(
             package='rviz2',
@@ -48,7 +53,7 @@ def generate_launch_description():
         #     name='eskf_node',
         #     output='screen'
         # ),
-        # MapOptmization_node,
+        MapOptmization_node,
         # launch_ros.actions.Node(
         #     package='robot_localization',
         #     executable='ekf_node',
