@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             "format_imu_pointcloud_node = imu_calibration_tools.main:main",
             "eskf_node = imu_calibration_tools.ESKF:main",
+            "a_star_node = imu_calibration_tools.AStar:main"
         ],
     },
 )

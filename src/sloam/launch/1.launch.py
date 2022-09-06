@@ -53,7 +53,7 @@ def generate_launch_description():
         #     name='eskf_node',
         #     output='screen'
         # ),
-        # MapOptmization_node,
+        MapOptmization_node,
         # launch_ros.actions.Node(
         #     package='robot_localization',
         #     executable='ekf_node',
@@ -61,6 +61,12 @@ def generate_launch_description():
         #     output='screen',
         #     parameters=[os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')],
         #    ),
+        Node(
+            package='imu_calibration_tools',
+            executable='a_star_node',
+            name='a_star_node',
+            output='screen'
+        ),
         ])
         
     return launch_description
