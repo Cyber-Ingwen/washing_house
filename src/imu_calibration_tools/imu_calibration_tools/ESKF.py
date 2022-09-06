@@ -162,11 +162,11 @@ class ESKalmanFilter():
             self.list.append((self.ba[0]))
             print("\r", self.count, "--", self.ba[0], end="", flush = True)
             
-        if (self.count == 100):
-            fig, ax = plt.subplots(1, 1)
-            ax.plot(self.list, color="#7744FF", lw=3)
+        # if (self.count == 100):
+        #     fig, ax = plt.subplots(1, 1)
+        #     ax.plot(self.list, color="#7744FF", lw=3)
             
-            plt.show()
+        #     plt.show()
         
         if (self.count == 100):
             self.nominal_state[9:12] = self.ba
