@@ -23,7 +23,7 @@ ament_auto_add_executable (MapOptmization src/MapOptmization.cpp)
 target_link_libraries(FeatureExtraction ${PCL_LIBRARIES})
 target_link_libraries(frameFeature ${PCL_LIBRARIES})
 target_link_libraries(lidarOdometry ${PCL_LIBRARIES} ${CERES_LIBRARIES})
-target_link_libraries(MapOptmization ${PCL_LIBRARIES})
+target_link_libraries(MapOptmization ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 ament_auto_package ()
 

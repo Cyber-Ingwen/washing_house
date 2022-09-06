@@ -20,6 +20,8 @@ class MapOptmization: public rclcpp::Node
 
         double filtered_ax, filtered_ay, filtered_az;
         int filter_init_flag;
+        vector<int> occ_list;
+        YAML::Node config;
 
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom;
         rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom;
@@ -49,20 +51,23 @@ class MapOptmization: public rclcpp::Node
 MapOptmization::MapOptmization(std::string name): Node(name)
 {
     /*创建接收和发布*/
-    sub_odom = this->create_subscription<nav_msgs::msg::Odometry>("/odom", 100, std::bind(&MapOptmization::odomHandler, this, std::placeholders::_1));
-
-    pub_odom = this->create_publisher<nav_msgs::msg::Odometry>("/odom2", 100);
-
-    sub_imu = this->create_subscription<sensor_msgs::msg::Imu>("/imu", 100, std::bind(&MapOptmization::imuHandler, this, std::placeholders::_1));
-
-    pub_imu = this->create_publisher<sensor_msgs::msg::Imu>("/imu2", 100);
-    pub_imu2odom = this->create_publisher<nav_msgs::msg::Odometry>("/imu2odom", 100);
-
     sub_map = this->create_subscription<sensor_msgs::msg::PointCloud2>("/sum_lidar_odom_cloud2", 100, std::bind(&MapOptmization::mapHandler, this, std::placeholders::_1));
     pub_map = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/map", 100);
     pub_map_test = this->create_publisher<sensor_msgs::msg::PointCloud2>("/map_test", 100);
 
+    std::string config_path;
+    config_path = "src/sloam/config/config.yaml";
+    config = YAML::LoadFile(config_path);
+
+    int width = 100;
+    int height = 100;
+    for (int i = 0; i < height * width; i++)
+    {
+        occ_list.push_back(-1);
+    }
+
     RCLCPP_INFO(this->get_logger(), "\033[1;32m----> MapOptmization Started.\033[0m");
+    
 }
 
 void MapOptmization::odomHandler(const nav_msgs::msg::Odometry::SharedPtr msg_ptr)
@@ -202,22 +207,23 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
     myMap.info.resolution = 1;
     myMap.info.width = width;
     myMap.info.height = height;
-    myMap.info.origin.position.x = width/2;
-    myMap.info.origin.position.y = width/2;
+    myMap.info.origin.position.x = -width/2;
+    myMap.info.origin.position.y = -width/2;
     myMap.info.origin.position.z = 0;
-    myMap.info.origin.orientation.x = 0.1;
+    myMap.info.origin.orientation.x = 3.14159;
     myMap.info.origin.orientation.y = 0;
     myMap.info.origin.orientation.z = 0;
     myMap.info.origin.orientation.w = 0;
 
-    vector<int> occ_list;
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     pcl::fromROSMsg(*msg_ptr, *cloud);
 
-    for (int i = 0; i < height * width; i++)
-    {
-        occ_list.push_back(-1);
-    }
+    float max, min;
+    int threshold;
+    max = config["max"].as<float>();
+    min = config["min"].as<float>();
+    threshold = config["threshold"].as<int>();
+
     for (int i = 0; i < cloud->points.size(); i++)
     {
         float x = cloud->points[i].x;
@@ -225,11 +231,24 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
         float z = cloud->points[i].z;
         if ((x < width/2) && (y < width/2) && (x > -width/2) && (y > -width/2))
         {
-            int ind = height * width - ((int(y) + width/2) % height) * height + int(x) + width/2;
-            occ_list[ind] = 10;
-            if(z > 0.5 && z < 3)
+            int ind = ((int(y) + width/2)) * height + int(x) + width/2;
+            if (ind > 0)
             {
-                occ_list[ind] = 100;
+                if (occ_list[ind] == -1)
+                {
+                    occ_list[ind] = 10;
+                }
+                if(z > min && z < max)
+                {
+                    if (occ_list[ind] < threshold)
+                    {
+                        occ_list[ind] += 10;
+                    }
+                    if (occ_list[ind] >= threshold)
+                    {
+                        occ_list[ind] = 100;
+                    }
+                }
             }
         }
     }
@@ -247,7 +266,7 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
         float z = cloud->points[i].z;
         if ((x < width/2) && (y < width/2) && (x > -width/2) && (y > -width/2))
         {
-            if(z > 0.5 && z < 3)
+            if(z > min && z < max)
             {
                 cloud_temp->push_back(cloud->points[i]);
             }
