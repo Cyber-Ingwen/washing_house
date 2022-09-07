@@ -43,6 +43,17 @@ class AStar_node(Node):
             if grid_map.data[i] == 100:
                 if (x < width and y < height):
                     map[x, y] = 0
+                    n = 2
+                    for i in range(n):
+                        i += 1
+                        map[x+i, y] = 0
+                        map[x-i, y] = 0
+                        map[x, y+i] = 0
+                        map[x, y-i] = 0
+                        map[x+i, y+i] = 0
+                        map[x+i, y-i] = 0
+                        map[x-i, y+i] = 0
+                        map[x-i, y-i] = 0
                 else:
                     print("warning", x, y)
                
@@ -87,7 +98,7 @@ class AStar_node(Node):
                 elif (map[x, y] == 7):
                     grid_map.data[ind] = -126
                 else:
-                    grid_map.data[ind] = -1
+                    grid_map.data[ind] = -50
         
         self.pub_map.publish(grid_map)
             
