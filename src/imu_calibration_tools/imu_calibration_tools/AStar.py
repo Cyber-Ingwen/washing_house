@@ -9,10 +9,12 @@ import copy
 class AStar_node(Node):
     def __init__(self, name):
         super().__init__(name)
-        self.get_logger().info(("\033[1;32m----> "+str(name)+" Started.\033[0m"))
+        self.get_logger().info(("\033[132m----> "+str(name)+" Started.\033[0m"))
         
         self.sub_map = self.create_subscription(OccupancyGrid, "/map", self.callback_map, 10)
         self.sub_odom = self.create_subscription(Odometry, "/frame_odom2", self.callback_odom, 10)
+        self.pub_map = self.create_publisher(OccupancyGrid, "/map2", 10) 
+        
         self.start = [0, 0]
         self.goal = [10, 20]
         self.w, self.h = 100, 100
@@ -27,12 +29,7 @@ class AStar_node(Node):
         a = AStar(map, self.start, self.goal)
         a.main()
         a.path_backtrace()
-        # plt.imshow(map, cmap=plt.cm.hot, interpolation='nearest')
-        # xlim(0, 100)
-        # ylim(0, 100)
-        # plt.show()
-        m1 = MAP()
-        m1.draw_three_axes(a)
+        self.map_publish(a.draw_direction_point(), grid_map)
         
     def _process_map(self, grid_map):
         self.w, self.h = int(grid_map.info.width), int(grid_map.info.height)
@@ -52,7 +49,47 @@ class AStar_node(Node):
             map[self.start[0], self.start[1]] = 7
                 
         return map
-          
+    
+    def map_publish(self, map, map_msg):
+        grid_map = OccupancyGrid()
+
+        width = 100
+        height = 100
+
+        grid_map.header.frame_id = "map"
+        grid_map.header.stamp = map_msg.header.stamp
+        grid_map.info.map_load_time = map_msg.header.stamp
+        grid_map.info.resolution = 1.0
+        grid_map.info.width = width
+        grid_map.info.height = height
+        grid_map.info.origin.position.x = -50.0
+        grid_map.info.origin.position.y = -50.0
+        grid_map.info.origin.position.z = 0.0
+        grid_map.info.origin.orientation.x = 0.0
+        grid_map.info.origin.orientation.y = 0.0
+        grid_map.info.origin.orientation.z = 0.0
+        grid_map.info.origin.orientation.w = 1.0
+        
+        for i in range(width * height):
+            grid_map.data.append(-1)
+        
+        for x in range(width):
+            for y in range(height):
+                # ind = int((x + width / 2) + (y + width / 2) * width)
+                ind = x + y * width
+                if (map[x, y] == 0):
+                    grid_map.data[ind] = 100
+                elif (map[x, y] == 10):
+                    grid_map.data[ind] = 0
+                elif (map[x, y] == 3):
+                    grid_map.data[ind] = -50
+                elif (map[x, y] == 7):
+                    grid_map.data[ind] = -126
+                else:
+                    grid_map.data[ind] = -1
+        
+        self.pub_map.publish(grid_map)
+            
             
 class AStar(object):
     """
@@ -190,6 +227,25 @@ class AStar(object):
                 else:
                     continue
             j = j+1
+            
+    def draw_direction_point(self):
+        map_direction = copy.deepcopy(self.map)
+        for i in range(self.best_path_array.shape[1]):
+            x = self.best_path_array[:, i]
+            if (x[0] == self.start[0]) and (x[1] == self.start[1]):
+                continue
+            elif (x[0] == self.goal[0]) and (x[1] == self.goal[1]):
+                continue
+            elif (int(x[0])<50 and  int(x[1]) < 50):
+                map_direction[int(x[0]), int(x[1])] = 6
+                
+        # plt.figure()
+        # plt.imshow(map_direction, cmap=plt.cm.hot, interpolation='nearest', vmin=0, vmax=10)
+        # xlim(-1, 50)
+        # ylim(-1, 50)
+        # plt.show()
+        
+        return map_direction
 
     def main(self):
         """
@@ -234,7 +290,6 @@ class MAP(object):
     def draw_direction_point(self, a):
         """
         从终点开始，根据记录的方向信息，画出搜索的路径图
-        :return:
         """
         print('打印direction长度:', a.record_direction.shape[1])
         map_direction = copy.deepcopy(a.map)
@@ -242,15 +297,17 @@ class MAP(object):
             x = a.best_path_array[:, i]
             map_direction[int(x[0]), int(x[1])] = 3
 
-        plt.imshow(map_direction, cmap=plt.cm.hot, interpolation='nearest', vmin=0, vmax=10)
-        xlim(-1, 100)
-        ylim(-1, 100)
+        # plt.imshow(map_direction, cmap=plt.cm.hot, interpolation='nearest', vmin=0, vmax=10)
+        # xlim(-1, 100)
+        # ylim(-1, 100)
+        
+        return map_direction
 
     def draw_three_axes(self, a):
-        plt.figure()
+        # plt.figure()
         self.draw_direction_point(a)
 
-        plt.show()
+        # plt.show()
                         
                 
 def main(args=None):
