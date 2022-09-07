@@ -59,8 +59,9 @@ MapOptmization::MapOptmization(std::string name): Node(name)
     config_path = "src/sloam/config/config.yaml";
     config = YAML::LoadFile(config_path);
 
-    int width = 100;
-    int height = 100;
+    float r = config["resolution"].as<float>();
+    int width = int(float(config["width"].as<int>()) / r);
+    int height = int(float(config["height"].as<int>()) / r);
     for (int i = 0; i < height * width; i++)
     {
         occ_list.push_back(-1);
@@ -196,24 +197,25 @@ void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
 
 void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr)
 {
-    nav_msgs::msg::OccupancyGrid myMap;
+    nav_msgs::msg::OccupancyGrid grid_map;
 
     // 地图数据 
-    int width = 100;
-    int height = 100;
+    float r = config["resolution"].as<float>();
+    int width = int(float(config["width"].as<int>()) / r);
+    int height = int(float(config["height"].as<int>()) / r);
 
-    myMap.header.stamp = hd.stamp;
-    myMap.info.map_load_time = msg_ptr->header.stamp;
-    myMap.info.resolution = 1;
-    myMap.info.width = width;
-    myMap.info.height = height;
-    myMap.info.origin.position.x = -width/2;
-    myMap.info.origin.position.y = -width/2;
-    myMap.info.origin.position.z = 0;
-    myMap.info.origin.orientation.x = 3.14159;
-    myMap.info.origin.orientation.y = 0;
-    myMap.info.origin.orientation.z = 0;
-    myMap.info.origin.orientation.w = 0;
+    grid_map.header.stamp = hd.stamp;
+    grid_map.info.map_load_time = msg_ptr->header.stamp;
+    grid_map.info.resolution = r;
+    grid_map.info.width = width;
+    grid_map.info.height = height;
+    grid_map.info.origin.position.x = -config["width"].as<int>()/2;
+    grid_map.info.origin.position.y = -config["height"].as<int>()/2;
+    grid_map.info.origin.position.z = 0;
+    grid_map.info.origin.orientation.x = 0;
+    grid_map.info.origin.orientation.y = 0;
+    grid_map.info.origin.orientation.z = 0;
+    grid_map.info.origin.orientation.w = 1;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     pcl::fromROSMsg(*msg_ptr, *cloud);
@@ -229,9 +231,9 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
         float x = cloud->points[i].x;
         float y = cloud->points[i].y;
         float z = cloud->points[i].z;
-        if ((x < width/2) && (y < width/2) && (x > -width/2) && (y > -width/2))
+        if ((x / r < width/2) && (y / r < width/2) && (x / r > -width/2) && (y / r > -width/2))
         {
-            int ind = ((int(y) + width/2)) * height + int(x) + width/2;
+            int ind = ((int(y / r) + width/2)) * height + int(x / r) + width/2;
             if (ind > 0)
             {
                 if (occ_list[ind] == -1)
@@ -255,31 +257,31 @@ void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr m
 
     for (int i = 0; i < height * width; i++)
     {
-        myMap.data.push_back(int8_t(occ_list[i]));
+        grid_map.data.push_back(int8_t(occ_list[i]));
     }
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_temp = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-    for (int i = 0; i < cloud->points.size(); i++)
-    {
-        float x = cloud->points[i].x;
-        float y = cloud->points[i].y;
-        float z = cloud->points[i].z;
-        if ((x < width/2) && (y < width/2) && (x > -width/2) && (y > -width/2))
-        {
-            if(z > min && z < max)
-            {
-                cloud_temp->push_back(cloud->points[i]);
-            }
-        }
-    }
+    // pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_temp = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    // for (int i = 0; i < cloud->points.size(); i++)
+    // {
+    //     float x = cloud->points[i].x;
+    //     float y = cloud->points[i].y;
+    //     float z = cloud->points[i].z;
+    //     if ((x < width/2) && (y < width/2) && (x > -width/2) && (y > -width/2))
+    //     {
+    //         if(z > min && z < max)
+    //         {
+    //             cloud_temp->push_back(cloud->points[i]);
+    //         }
+    //     }
+    // }
     
-    sensor_msgs::msg::PointCloud2 res_cloud_msgs;
-    pcl::toROSMsg(*cloud_temp, res_cloud_msgs);
-    res_cloud_msgs.header.frame_id = "map";
-    pub_map_test->publish(res_cloud_msgs);
+    // sensor_msgs::msg::PointCloud2 res_cloud_msgs;
+    // pcl::toROSMsg(*cloud_temp, res_cloud_msgs);
+    // res_cloud_msgs.header.frame_id = "map";
+    // pub_map_test->publish(res_cloud_msgs);
 
-    myMap.header.frame_id = "map";
-    pub_map->publish(myMap);
+    grid_map.header.frame_id = "map";
+    pub_map->publish(grid_map);
 }
 
 void MapOptmization::cul_val_mean_var(double input)
