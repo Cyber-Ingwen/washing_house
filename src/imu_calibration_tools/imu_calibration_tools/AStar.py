@@ -15,14 +15,16 @@ class AStar_node(Node):
         self.sub_odom = self.create_subscription(Odometry, "/frame_odom2", self.callback_odom, 10)
         self.pub_map = self.create_publisher(OccupancyGrid, "/map2", 10) 
         
-        self.start = [0, 0]
-        self.goal = [10, 20]
         self.w, self.h = 100, 100
+        self.r = 0.2
+        
+        self.start = [0, 0]
+        self.goal = [1, 1]
         
     def callback_odom(self, data):
         x = data.pose.pose.position.x - self.w / 2
         y = data.pose.pose.position.y - self.h / 2
-        self.start = [int(x), int(y)]
+        self.start = [int(x / self.r), int(y / self.r)]
     
     def callback_map(self, grid_map):
         map = self._process_map(grid_map)
@@ -32,14 +34,14 @@ class AStar_node(Node):
         self.map_publish(a.draw_direction_point(), grid_map)
         
     def _process_map(self, grid_map):
-        self.w, self.h = int(grid_map.info.width), int(grid_map.info.height)
-        map = np.full((self.w, self.h), int(10), dtype=np.int8)
-        print("len:", self.w, self.h)
+        width = int(self.w / self.r)
+        height = int(self.h / self.r)
+        map = np.full((width, height), int(10), dtype=np.int8)
         for i in range(len(grid_map.data)):
-            x = i % self.w
-            y = int((i - x) / self.w)
+            x = i % width
+            y = int((i - x) / width)
             if grid_map.data[i] == 100:
-                if (x < 100 and y < 100):
+                if (x < width and y < height):
                     map[x, y] = 0
                 else:
                     print("warning", x, y)
@@ -53,17 +55,17 @@ class AStar_node(Node):
     def map_publish(self, map, map_msg):
         grid_map = OccupancyGrid()
 
-        width = 100
-        height = 100
+        width = int(self.w / self.r)
+        height = int(self.h / self.r)
 
         grid_map.header.frame_id = "map"
         grid_map.header.stamp = map_msg.header.stamp
         grid_map.info.map_load_time = map_msg.header.stamp
-        grid_map.info.resolution = 1.0
+        grid_map.info.resolution = self.r
         grid_map.info.width = width
         grid_map.info.height = height
-        grid_map.info.origin.position.x = -50.0
-        grid_map.info.origin.position.y = -50.0
+        grid_map.info.origin.position.x = -self.w / 2
+        grid_map.info.origin.position.y = -self.h / 2
         grid_map.info.origin.position.z = 0.0
         grid_map.info.origin.orientation.x = 0.0
         grid_map.info.origin.orientation.y = 0.0
@@ -75,7 +77,6 @@ class AStar_node(Node):
         
         for x in range(width):
             for y in range(height):
-                # ind = int((x + width / 2) + (y + width / 2) * width)
                 ind = x + y * width
                 if (map[x, y] == 0):
                     grid_map.data[ind] = 100
@@ -112,6 +113,9 @@ class AStar(object):
         self.record_direction = np.array([[], [], [], []])
         self.best_path_array = np.array([[], []])
         self.point_f = np.array([[], [], []])
+        
+        self.w, self.h = 100, 100
+        self.r = 0.2
 
     def h_value_tem(self, cur_p):
         """
@@ -236,7 +240,7 @@ class AStar(object):
                 continue
             elif (x[0] == self.goal[0]) and (x[1] == self.goal[1]):
                 continue
-            elif (int(x[0])<50 and  int(x[1]) < 50):
+            elif (abs(int(x[0]))<(self.w / self.r) and abs(int(x[1])) < (self.w / self.r)):
                 map_direction[int(x[0]), int(x[1])] = 6
                 
         # plt.figure()
@@ -251,30 +255,27 @@ class AStar(object):
         """
         main函数
         """
-        self.open = np.column_stack((self.open, self.start))  # 起点放入open
-        self.current_point = self.start  # 起点放入当前点，作为父节点
+        self.open = np.column_stack((self.open, self.start))
+        self.current_point = self.start
         # self.closed
         ite = 1
-        while ite <= 800:
+        while ite <= 4000:
                 if self.open.shape[1] == 0:
                     print('没有搜索到路径！')
                     return
 
-                self.last_point = self.current_point  # 上一个目标点不断取得更新
+                self.last_point = self.current_point
 
-                index, self.current_point = self.min_f()  # 判断open表中f值
-                print("\r", self.current_point, "--", ite, end="", flush = True)
+                index, self.current_point = self.min_f()
 
                 # 选取open表中最小f值的节点作为best，放入closed表
                 self.closed = np.c_[self.closed, self.current_point]
 
                 if self.current_point[0] == self.goal[0] and self.current_point[1] == self.goal[1]:
-                    print('搜索成功！')
                     return
                 
-                if abs(self.current_point[0]) >= 99 or abs(self.current_point[1]) >= 99:
+                if abs(self.current_point[0]) >= (self.w / self.r - 1) or abs(self.current_point[1]) >= (self.h / self.r - 1):
                     self.goal = self.current_point
-                    print('搜索成功！')
                     return
 
                 self.child_point(self.current_point)
@@ -291,7 +292,6 @@ class MAP(object):
         """
         从终点开始，根据记录的方向信息，画出搜索的路径图
         """
-        print('打印direction长度:', a.record_direction.shape[1])
         map_direction = copy.deepcopy(a.map)
         for i in range(a.best_path_array.shape[1]):
             x = a.best_path_array[:, i]
