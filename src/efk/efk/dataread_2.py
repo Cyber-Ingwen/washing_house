@@ -74,19 +74,27 @@ class Node_kf(Node):
         y_angle = data.angular_velocity.y
         z_angle = data.angular_velocity.z
         self.list.append(z_angle)
-        self.diff.append(y_linear - self.p)
+        segma = 2
+        miu = 2
+        y = 1 / ( math.sqrt(2 * math.pi) * segma ) * math.exp(- (z_angle - miu ) * (z_angle - miu ) / ( 2 * segma * segma ) ) 
+        self.diff.append(y)
+        #self.diff.append(y_linear - self.p)
         self.p = y_linear
         self.count += 1
         self.index.append(self.count)
-        # if self.count == 800:
-        #     plt.hist(self.list,bins=80)
-        #     #plt.plot(self.index,self.list)
-        #     plt.show()
-        #     self.count = 0
-        #     self.list = []
-        #     self.index = []
-        #     self.diff = []
-        # print("1")
+
+        if self.count == 800:
+            fig, ax = plt.subplots(1, 1)
+            aa = ax.hist(self.list,bins=80)
+            ax.plot(aa,self.diff)
+            plt.ylim(-2,1)
+            #plt.plot(self.index,self.list)
+            plt.show()
+            self.count = 0
+            self.list = []
+            self.index = []
+            self.diff = []
+        print("1")
         self.imu_position_volcity(x_linear,y_linear,z_linear,x_angle,y_angle,z_angle)
         print(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo,self.roll,self.pitch,self.roll)
         self.m.Kalman_Fliter(self.p_x_0, self.p_y_0, self.p_z_0, self.v_x_0, self.v_y_0, self.v_z_0,self.last_vel_x, self.last_vel_y, self.last_vel_z, self.x_clo, self.y_clo, self.z_clo,self.roll,self.pitch,self.roll)
