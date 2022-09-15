@@ -86,7 +86,7 @@ class LidarOdometry: public rclcpp::Node
 
             tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
-            Eigen::Quaterniond temp(0,0,0,1); 
+            Eigen::Quaterniond temp(1,0,0,0); 
             q_0_curr = temp;     
             q_0_last = temp;                
             t_0_curr << 0,0,0;  
@@ -123,7 +123,7 @@ void LidarOdometry::publishResult(){
         t_0_last = t_0_curr;
         //发布里程计
         nav_msgs::msg::Odometry LO;
-        LO.header.frame_id = "map";
+        LO.header.frame_id = "odom";
         LO.child_frame_id = "base_link";
         LO.header.stamp = currHead.stamp;
         LO.pose.pose.position.x = t_0_curr[0];
@@ -146,17 +146,17 @@ void LidarOdometry::publishResult(){
         //发布里轨迹
         geometry_msgs::msg::PoseStamped pose_stamped;
         pose_stamped.header.stamp = LO.header.stamp;
-        pose_stamped.header.frame_id = "map";
+        pose_stamped.header.frame_id = "odom";
         pose_stamped.pose = LO.pose.pose;
         lidarPathInOdom.poses.push_back(pose_stamped);
         lidarPathInOdom.header.stamp=LO.header.stamp;
-        lidarPathInOdom.header.frame_id="map";
+        lidarPathInOdom.header.frame_id="odom";
         pub_frame_odom_path->publish(lidarPathInOdom);
         //发布平面特征点云
         sensor_msgs::msg::PointCloud2 plane_frame_cloud_msgs;
         pcl::toROSMsg(*currFramePlanePtr, plane_frame_cloud_msgs);
         plane_frame_cloud_msgs.header.stamp = LO.header.stamp;
-        plane_frame_cloud_msgs.header.frame_id = "map";
+        plane_frame_cloud_msgs.header.frame_id = "odom";
         pub_plane_frame_cloud->publish(plane_frame_cloud_msgs);
         //发布拼接点云地图
         if(numFrame % 5 == 0)
@@ -177,13 +177,13 @@ void LidarOdometry::publishResult(){
             sensor_msgs::msg::PointCloud2 res_cloud_msgs;
             pcl::toROSMsg(*cloud_temp, res_cloud_msgs);
             res_cloud_msgs.header.stamp = LO.header.stamp;
-            res_cloud_msgs.header.frame_id = "map";
+            res_cloud_msgs.header.frame_id = "odom";
             pub_sum_lidar_odom_cloud->publish(res_cloud_msgs);
     }
     //发布坐标
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp = currHead.stamp;
-    t.header.frame_id = "map";
+    t.header.frame_id = "odom";
     t.child_frame_id = "base_link";
     t.transform.translation.x = t_0_curr[0];
     t.transform.translation.y = t_0_curr[1];

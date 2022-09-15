@@ -19,16 +19,20 @@ class FeatureExtraction: public rclcpp::Node
         pcl::PointCloud<pcl::PointXYZI>::Ptr edge_points;
         pcl::PointCloud<pcl::PointXYZI>::Ptr plane_points;
 
+        std::string topic_name;
+
         FeatureExtraction(std::string name);
         void cloudHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
         void feature_extraction(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud);
         void publish_features(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
 };
 
-FeatureExtraction::FeatureExtraction(std::string name): Node(name)
+FeatureExtraction::FeatureExtraction(std::string name): Node(name, 
+    rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true))
 {
+    this->get_parameter("topic_name",topic_name);
     /*创建接收和发布点云*/
-    std::string topic_name = "/rslidar_points";
+    // topic_name = "/rslidar_points";
     sub_point_cloud = this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 100, std::bind(&FeatureExtraction::cloudHandler, this, std::placeholders::_1));
 
     pub_edge_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/edge_points", 100);
@@ -207,14 +211,14 @@ void FeatureExtraction::publish_features(const sensor_msgs::msg::PointCloud2::Sh
     sensor_msgs::msg::PointCloud2 edge_points_msg_ptr;
     pcl::toROSMsg(*edge_points, edge_points_msg_ptr);
     edge_points_msg_ptr.header.stamp = msg_ptr->header.stamp;
-    edge_points_msg_ptr.header.frame_id = "map";
+    edge_points_msg_ptr.header.frame_id = "odom";
     pub_edge_points->publish(edge_points_msg_ptr);
 
     //发布平面点
     sensor_msgs::msg::PointCloud2 plane_points_msg_ptr;
     pcl::toROSMsg(*plane_points, plane_points_msg_ptr);
     plane_points_msg_ptr.header.stamp = msg_ptr->header.stamp;
-    plane_points_msg_ptr.header.frame_id = "map";
+    plane_points_msg_ptr.header.frame_id = "odom";
     pub_plane_points->publish(plane_points_msg_ptr);
 }
 

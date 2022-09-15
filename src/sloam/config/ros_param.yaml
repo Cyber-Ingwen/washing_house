@@ -1,0 +1,11 @@
+FeatureExtraction:
+    ros__parameters:
+        topic_name: "points2"
+
+FrameFeature:
+    ros__parameters:
+        topic_name: "points2"
+
+CloudMap:
+    ros__parameters:
+        topic_name: "points2"

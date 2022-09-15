@@ -12,6 +12,8 @@ class FrameFeature: public rclcpp::Node
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_plane_frame_cloud;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_org_frame_cloud;
 
+        std::string topic_name;
+
         typedef VelodynePointXYZIRT PointType;   //点类型名称重定义，用于接收点云中各点
         typedef pcl::PointXYZI PointTypeOut;     //pcl点类型名称重定义，简化
         //定义pcl点云对象，存储原始点云
@@ -28,10 +30,12 @@ class FrameFeature: public rclcpp::Node
         int rowIndexEnd=0;       //定义点云线内点终点索引
         pcl::VoxelGrid<PointTypeOut> downSizeFilterPlane;  //定义点云下采样对象，用于点云抽稀
 
-        FrameFeature(std::string name): Node(name)
+        FrameFeature(std::string name): Node(name, 
+            rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true))
         {
             /*创建并初始化接收*/
-            std::string topic_name = "/rslidar_points";
+            this->get_parameter("topic_name",topic_name);
+            // std::string topic_name = "/rslidar_points";
             subLaserCloud = this->create_subscription<sensor_msgs::msg::PointCloud2>(topic_name, 100, std::bind(&FrameFeature::cloudHandler, this, std::placeholders::_1));
         
             pub_plane_frame_cloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/plane_points", 100);
@@ -142,12 +146,12 @@ void FrameFeature::cloudHandler(const sensor_msgs::msg::PointCloud2::SharedPtr c
     sensor_msgs::msg::PointCloud2 planeCloudMsg;
     pcl::toROSMsg(*cloud_temp, planeCloudMsg);      //将pcl点云对象转换为ros点云消息类型
     planeCloudMsg.header.stamp = cldMsg->header.stamp;
-    planeCloudMsg.header.frame_id = "map";
+    planeCloudMsg.header.frame_id = "odom";
     pub_plane_frame_cloud->publish(planeCloudMsg);
     //发布原始点云
     sensor_msgs::msg::PointCloud2 orgCloudMsg;
     orgCloudMsg=*cldMsg;
-    orgCloudMsg.header.frame_id="map";
+    orgCloudMsg.header.frame_id="odom";
     pub_org_frame_cloud->publish(orgCloudMsg);
 }
 

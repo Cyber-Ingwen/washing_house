@@ -37,12 +37,8 @@ class MapOptmization: public rclcpp::Node
         std_msgs::msg::Header hd;
 
         MapOptmization(std::string name);
-        void odomHandler(const nav_msgs::msg::Odometry::SharedPtr msg_ptr);
-        void imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
         void mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
 
-        void imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
-        void kalman(const sensor_msgs::msg::Imu::SharedPtr msg_ptr);
         void cul_val_mean_var(double input);
 
         ~MapOptmization(void){}
@@ -69,130 +65,6 @@ MapOptmization::MapOptmization(std::string name): Node(name)
 
     RCLCPP_INFO(this->get_logger(), "\033[1;32m----> MapOptmization Started.\033[0m");
     
-}
-
-void MapOptmization::odomHandler(const nav_msgs::msg::Odometry::SharedPtr msg_ptr)
-{
-    nav_msgs::msg::Odometry new_msg;
-    new_msg = *msg_ptr;
-
-    new_msg.header.frame_id = "map";
-    hd = new_msg.header;
-
-    auto temp = new_msg.pose.pose.position.y;
-    new_msg.pose.pose.position.x = -new_msg.pose.pose.position.x;
-    new_msg.pose.pose.position.y = -temp;
-
-    auto temp2 = new_msg.pose.pose.orientation.y;
-    auto temp3 = new_msg.pose.pose.orientation.z;
-
-    new_msg.pose.pose.orientation.y = new_msg.pose.pose.orientation.x;
-    new_msg.pose.pose.orientation.x = -temp2;
-    new_msg.pose.pose.orientation.z = new_msg.pose.pose.orientation.w;
-    new_msg.pose.pose.orientation.w = -temp3;
-
-    pub_odom->publish(new_msg);
-}
-
-void MapOptmization::imuHandler(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
-{
-    sensor_msgs::msg::Imu new_msg;
-    new_msg = *msg_ptr;
-
-    new_msg.header.stamp = hd.stamp;
-    new_msg.header.frame_id = "map";
-
-    new_msg.linear_acceleration.x = msg_ptr->linear_acceleration.x + 0.421;
-    new_msg.linear_acceleration.y = msg_ptr->linear_acceleration.y + 0.265;
-    new_msg.linear_acceleration.z = msg_ptr->linear_acceleration.z + 0.016;
-
-    new_msg.angular_velocity.x = (msg_ptr->angular_velocity.x - 0.0182214) * 3.1416 / 180.0;
-    new_msg.angular_velocity.y = (msg_ptr->angular_velocity.y - 0.0831042) * 3.1416 / 180.0;
-    new_msg.angular_velocity.z = (msg_ptr->angular_velocity.z - 0.0688892) * 3.1416 / 180.0;
-
-    new_msg.orientation_covariance = {1000000.0, 0, 0,
-                                    0, 1000000, 0,
-                                    0, 0, 0.000001};
-    new_msg.angular_velocity_covariance = new_msg.orientation_covariance;
-    new_msg.linear_acceleration_covariance = {-1,0,0,0,0,0,0,0,0};
-
-    pub_imu->publish(new_msg);
-
-    this->imu2odom(msg_ptr);
-}
-
-void MapOptmization::imu2odom(const sensor_msgs::msg::Imu::SharedPtr msg_ptr)
-{
-    auto delta_t = 0.01;
-    auto k = 1;
-
-    auto ax = msg_ptr->linear_acceleration.x + 0.421;
-    auto ay = msg_ptr->linear_acceleration.y + 0.265;
-    auto az = msg_ptr->linear_acceleration.z;
-    auto g = 9.816;
-    cout << "加速度：" << ax << " " << ay << " " << az << endl;
-
-    // 姿态
-    auto acc_roll = -atan2(ay, az);
-    auto acc_pitch = asinh(ax / g);
-
-    auto omega_x = (msg_ptr->angular_velocity.x - 0.0182214) * 3.1416 / 180.0;
-    auto omega_y = (msg_ptr->angular_velocity.y - 0.0831042) * 3.1416 / 180.0;
-    auto omega_z = (msg_ptr->angular_velocity.z - 0.0688892) * 3.1416 / 180.0;
-
-    roll = (1 - k * delta_t) * roll + k * delta_t * acc_roll + omega_x * delta_t;
-    pitch = (1 - k * delta_t) * pitch + k * delta_t * acc_pitch + omega_y * delta_t;
-    yaw = yaw + omega_z * delta_t;
-
-    this->cul_val_mean_var(roll);
-
-    cout << "旋转：" << roll << " " << pitch << " " << yaw << endl;
-
-    // 位置
-    Matrix3f R;
-    VectorXf a_vect(3), a_global(3);
-    R << cos(pitch)*cos(yaw), -sin(yaw)*cos(pitch), sin(pitch),
-         sin(roll)*sin(pitch)*cos(yaw) + sin(yaw)*cos(roll), -sin(roll)*sin(pitch)*sin(yaw) + cos(roll)*cos(yaw), -sin(roll)*cos(pitch),
-         sin(roll)*sin(yaw) - sin(pitch)*cos(roll)*cos(yaw), sin(roll)*cos(yaw) + sin(pitch)*sin(yaw)*cos(roll), cos(roll)*cos(pitch);
-    a_vect << ax, ay, az;
-    a_global = R * a_vect.matrix();
-
-    ax = a_global(0);
-    ay = a_global(1);
-    az = a_global(2) - g;
-
-    cout << "加速度：" << ax << " " << ay << " " << az << endl;
-
-    vx = vx + ax * delta_t;
-    vy = vy + ay * delta_t;
-    vz = vz + az * delta_t;
-
-    x = x + vx * delta_t;
-    y = y + vy * delta_t;
-    z = z + vz * delta_t;
-
-    cout << "位置：" << x << " " << y << " " << z << endl;
-
-    auto cy = cos(yaw * 0.5);
-    auto sy = sin(yaw * 0.5);
-    auto cp = cos(pitch * 0.5);
-    auto sp = sin(pitch * 0.5);
-    auto cr = cos(roll * 0.5);
-    auto sr = sin(roll * 0.5);
-
-    nav_msgs::msg::Odometry IO;
-    IO.header.frame_id = "map";
-    IO.child_frame_id = "base_link";
-    IO.header.stamp = msg_ptr->header.stamp;
-    IO.pose.pose.position.x = x;
-    IO.pose.pose.position.y = y;
-    IO.pose.pose.position.z = z;
-    IO.pose.pose.orientation.x = cy * cp * sr - sy * sp * cr;
-    IO.pose.pose.orientation.y = sy * cp * sr + cy * sp * cr;
-    IO.pose.pose.orientation.z = sy * cp * cr - cy * sp * sr;
-    IO.pose.pose.orientation.w = cy * cp * cr + sy * sp * sr;
-
-    pub_imu2odom->publish(IO);
 }
 
 void MapOptmization::mapHandler(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr)
